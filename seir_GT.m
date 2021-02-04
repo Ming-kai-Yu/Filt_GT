@@ -1,9 +1,15 @@
 % SEIR model, conditioned on the observation at Y(0) and Y(T)
+tic
 
 %% system spec
-T = 5;
-ts = 5;
-dy = 8;
+T = 30;
+%ts = 5;
+dy = 4;
+
+t_resampl = [5, 10, 15, 20, 25, 30];
+num_resampl = length(t_resampl);
+
+
 
 sys = @seir;
 c = [0.05; 0.2; 0.05];
@@ -17,6 +23,8 @@ x0 = feval(sys,'x0');
 lambda0 = feval(sys,'prop',x0,c);
 lambda = lambda0;
 %lambda = ones(3,1);
+
+
 
 %%
 % tuning of lambda
@@ -33,15 +41,18 @@ lambda = [lambda1; lambda2; lambda3];
 
 %%
 
-
 Ns = 10000;
+
 V = zeros(n,Ns); 
 w = zeros(1,Ns);
-L = zeros(1,Ns);
+l = zeros(1,Ns);
 wl = zeros(1, Ns);
-tic;
+k_remaining = zeros(m, Ns);
+ancester_ind = zeros(1, Ns);
+
+
 %%
-for k = 1:Ns
+for i = 1:Ns
     % simulate the count of each reaction r1,r2,r3
     r1 = poissrnd(lambda(1)*T);
     accept = 0;
@@ -52,19 +63,38 @@ for k = 1:Ns
             accept = 1;
         end
     end
-    w(k) = poisspdf(r2, lambda(2)*T);
-        
-    % path -- reaction time, type of reaction
-    nr = r1+r2+r3;
-    type = [ones(r1,1); 2*ones(r2,1); 3*ones(r3,1)];
-    type_dat = type(randperm(nr));
-    t_dat = sort(rand(nr,1)*T);
-       
-    [x,L] = likelihood(x0, sys, t_dat, type_dat, lambda, ts, c);
-    L(k) = L;
-    V(:,k) = x;
-    wl(k) = w(k)*L(k);
+    w(i) = poisspdf(r2, lambda(2)*T);
+    k_remaining(:,i) = [r1; r2; r3];
+    V(:,i) = x0;
+    ancester_ind(i)=i;
 end
+w = w/sum(w);
+for piece = 1:num_resampl
+     if piece == 1
+        piece_dt = t_resampl(1);
+        wl = w;
+        t_remaining = T;
+    else
+        piece_dt = t_resampl(piece)-t_resampl(piece-1);
+        t_remaining = T - t_resampl(piece-1);
+    end
+    k_piece = binornd(k_remaining, piece_dt/t_remaining);
+    k_remaining = k_remaining - k_piece;
+   
+    for i = 1:Ns
+        num_react = sum(k_piece(:,i));
+        type = [ones(k_piece(1,i),1); 2*ones(k_piece(2,i),1); ...
+            3*ones(k_piece(3,i),1)];
+        type_dat = type(randperm(num_react));
+        t_dat = sort(rand(num_react,1)*piece_dt);
+        [V(:,i),wl(i)] = evolve_state_l(V(:,i), sys, t_dat, type_dat, ...
+            lambda, piece_dt, c, wl(i));
+    end
+    %[V, wl, k_remaining] = resampling(V, wl, k_remaining);
+    [V, wl, k_remaining, ancester_ind] = resampling2(V, wl, k_remaining, ancester_ind);
+end
+
+
 wl = wl/sum(wl);
 
 toc;
@@ -91,7 +121,7 @@ plot(xstate, xw2, '--*', 'LineWidth', 2)
 xlabel(['Susceptible population at t = ', num2str(ts)])
 legend('GT', 'naive')
 hold off
-saveas(gcf, 'susceptible-dy8-t5.png')
+%saveas(gcf, 'susceptible-dy8-t5.png')
 %%
 figure
 xmin = min([V(2,:), Vs_naive(2,:)]);
@@ -113,7 +143,7 @@ plot(xstate, xw2, '--*', 'LineWidth', 2)
 legend('GT', 'naive')
 xlabel(['Exposed population population at t = ', num2str(ts)])
 hold off
-saveas(gcf, 'exposed-dy8-t5.png')
+%saveas(gcf, 'exposed-dy8-t5.png')
 %}
 %%
 %{

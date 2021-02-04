@@ -1,8 +1,8 @@
 % SEIR model, only observe #I(t) at predetermined time T
 
-T = 5;
-ts = 5;
-dy = 8;
+T = 30;
+ts = 30;
+dy = 4;
 
 sys = @seir;
 c = [0.05; 0.2; 0.05];
@@ -62,7 +62,7 @@ Vs_naive = Vs;
 
 %%
 
-%{
+%
 figure
 histogram(V(4,:)-x0(4))
 xlabel('dy = #I(T) - #I(0)')
