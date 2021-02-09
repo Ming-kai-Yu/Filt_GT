@@ -14,7 +14,7 @@ nu = feval(sys,'nu');
 n_obs = n-n_unobs;
 x0 = feval(sys,'x0');
 
-Ns = 10000;
+Ns = 20000;
 V = zeros(n,Ns); 
 Vs = zeros(n, Ns);
 w = zeros(1,Ns);

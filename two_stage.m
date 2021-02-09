@@ -4,7 +4,7 @@ tic
 %% system spec
 T = 30;
 % first stage, evolution during [0, t1]
-t1 = 25;
+t1 = 30
 t2 = T - t1;
 delta_y = 4;
 
@@ -92,10 +92,10 @@ for i = 1:Ns
     % Remarks:
     % The purpose of setting a maximum number of itermation here 
     % is to prevent being trapped in the while loop for a very long time.
-    % For instance, if dy = -12, it get a sample accepted, we would need
-    % r3 >= 12, and Prob(R3 >= 12) is approximately 10^7
+    % For instance, if dy = -12, to get a sample accepted, we would need
+    % r3 >= 12, while Prob(R3 >= 12) is approximately 10^(-7).
     % It's not so worthwhile to spend significant amount of time
-    % for a sample 
+    % on a sample that has practically zero weight.
     
     
     num_react = r1+r2+r3;
@@ -109,7 +109,8 @@ end
 
 wl = w .* l;
 wl = wl/sum(wl);
-
+fprintf('Percent of zero weight in overall weight is %f percent.\n',...
+    sum(wl==0)/Ns*100);
 toc;
 
 %%
