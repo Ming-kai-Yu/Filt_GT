@@ -4,7 +4,7 @@ tic
 %% system spec
 T = 30;
 % first stage, evolution during [0, t1]
-t1 = 15;
+t1 = 25;
 t2 = T - t1;
 delta_y = 4;
 
@@ -20,7 +20,7 @@ x0 = feval(sys,'x0');
 
 %% First stage
 
-Ns = 10000;
+Ns = 20000;
 V = zeros(n,Ns); 
 lambdas = zeros(m, Ns);
 
@@ -31,7 +31,8 @@ for k = 1:Ns
     while(t<t1)
         lambda = feval(sys,'prop',x,c);
         lambda0 = sum(lambda);
-        tau = exprnd(1/lambda0);
+        %tau = exprnd(1/lambda0);
+        tau = log(1/rand)/lambda0;
         if (t + tau <= t1)
             r = rand*lambda0;
             q = cumsum(lambda);
@@ -50,9 +51,15 @@ for k = 1:Ns
     V(:,k) = x;
 end
 
-%% Second stage: GT
+V_stage1 = V;
 
-lambda_gt = mean(lambdas, 2);
+%% Second stage: GT
+if t1== 0
+    lambda_gt = feval(sys,'prop',x0,c);
+else
+    lambda_gt = mean(lambdas, 2);
+end
+
 y_T = x0(4) + delta_y;
 dy =  y_T*ones(1,Ns) - V(4,:);
 
