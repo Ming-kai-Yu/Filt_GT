@@ -1,0 +1,89 @@
+% evaluate the performance of the naive method and two stage method filter
+T = 3;
+t1 = 2.5;
+
+
+sys = @four_species;
+c = [1; 1.5; 1.2; 1.5];
+n_unobs = 2; 
+
+nu = feval(sys,'nu'); 
+[n, m] = size(nu);
+n_obs = n-n_unobs;
+x0 = feval(sys, 'x0');
+
+Ns = 10000;
+num_trial = 1000;
+
+state_true = zeros(n, num_trial);
+s1_naive = zeros(num_trial, 1);
+s1_gt = zeros(num_trial, 1);
+%%
+tic;
+for trial = 1:num_trial
+    x = ssa(sys, c, x0, T);
+    state_true(:, trial) = x;
+    dy = x(3:4)-x0(3:4);
+    [V_naive, w] = get_V_w_naive(T, dy, sys, c, Ns);
+    s1_naive(trial) = V_naive(1,:)*w';
+    [V_gt, w] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
+    s1_gt(trial) = V_gt(1,:)*w';
+end
+toc;
+
+%%
+s1_true = state_true(1,:)';
+x_max = max([s1_true; s1_gt; s1_naive]);
+x_min = min([s1_true; s1_gt; s1_naive]);
+x_ref = x_min : x_max;
+figure
+%sz = 40;
+scatter(s1_true, s1_gt, 'filled')
+hold on
+scatter(s1_true, s1_naive, 'filled')
+plot(x_ref, x_ref, 'LineWidth', 2)
+grid on
+hold off
+
+%%
+s1_naive_clean = s1_naive(isfinite(s1_naive));
+s1_naive_true = s1_true(isfinite(s1_naive));
+num_clean = sum(isfinite(s1_naive));
+
+err_gt = s1_gt - s1_true;
+err_naive = s1_naive_clean - s1_naive_true;
+
+figure
+h1 = histogram(s1_gt - s1_true);
+hold on
+h2 = histogram(s1_naive_clean - s1_naive_true);
+legend('gt','naive')
+hold off
+
+
+bias_gt = mean(err_gt);
+bias_ci_lw = mean(err_gt) - 2*std(err_gt)/sqrt(num_trial);
+bias_ci_up = mean(err_gt) + 2*std(err_gt)/sqrt(num_trial);
+fprintf('The estimated bias for GT method is %f.\n', bias_gt)
+fprintf('The 95 pc confidence interval is [%f, %f].\n', bias_ci_lw, bias_ci_up);
+
+bias_naive = mean(err_naive);
+bias_ci_lw = mean(err_naive) - 2*std(err_naive)/sqrt(num_clean);
+bias_ci_up = mean(err_naive) + 2*std(err_naive)/sqrt(num_clean);
+fprintf('The estimated bias for naive method is %f.\n', bias_naive)
+fprintf('The 95 pc confidence interval is [%f, %f].\n', bias_ci_lw, bias_ci_up);
+
+l2_err = sqrt(mean(err_gt.^2));
+m2_bar = 2/sqrt(num_trial)*std(err_gt.^2);
+l2_lw = sqrt(l2_err^2 - m2_bar);
+l2_up = sqrt(l2_err^2 + m2_bar);
+fprintf('The estimated L2 error for GT method is %f.\n', l2_err)
+fprintf('The 95 pc confidence interval is [%f, %f].\n', l2_lw, l2_up);
+
+
+l2_err = sqrt(mean(err_naive.^2));
+m2_bar = 2/sqrt(num_clean)*std(err_naive.^2);
+l2_lw = sqrt(l2_err^2 - m2_bar);
+l2_up = sqrt(l2_err^2 + m2_bar);
+fprintf('The estimated L2 error for naive method is %f.\n', l2_err)
+fprintf('The 95 pc confidence interval is [%f, %f].\n', l2_lw, l2_up);
