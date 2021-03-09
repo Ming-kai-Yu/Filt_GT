@@ -1,7 +1,7 @@
 % SEIR model, when only observe I
 T = 30;
-t1 = 25;
-dy = 8;
+t1 = 0;
+dy = 4;
 
 sys = @seir;
 c = [0.05; 0.2; 0.05];
@@ -13,7 +13,7 @@ n_obs = n-n_unobs;
 x0 = feval(sys,'x0');
 
 Ns = 10000;
-num_trial = 5;
+num_trial = 100;
 susceptible_naive = zeros(num_trial, Ns);
 exposed_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -57,9 +57,9 @@ plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 
 xlabel('Susceptible population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 9')
+ylabel('Conditional probability given y_0= 5, y_T = 17')
 hold off
-saveas(gcf, 'susceptible-dy4-naive.png')
+saveas(gcf, 'susceptible-dy12-naive.png')
 %%
 figure
 xmin = 0;
@@ -85,7 +85,7 @@ plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 xlabel('Exposed population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 9')
+ylabel('Conditional probability given y_0= 5, y_T = 17')
 hold off
 saveas(gcf, 'exposed-dy4-naive.png')
 
@@ -122,9 +122,9 @@ plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 %}
 xlabel('Susceptible population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 13')
+ylabel('Conditional probability given y_0= 5, y_T = 17')
 hold off
-saveas(gcf, 'susceptible-dy8-ci.png')
+saveas(gcf, 'susceptible-dy4-ci-gt.png')
 %%
 figure
 xmin = 0;

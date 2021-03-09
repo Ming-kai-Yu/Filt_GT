@@ -8,7 +8,7 @@
 %V1 = V; wl1 = wl;
 %V2 = V; wl2 = wl; 
 
-%{
+
 figure
 xmin = min([V1(1,:), V2(1,:),V_naive1(1,:), V_naive2(1,:)]);
 xmin = max([xmin, 0]);
@@ -32,16 +32,17 @@ for i = 1:xmax-xmin+1
 end
 plot(xstate, xw1, '-b', 'LineWidth', 2)
 hold on
-plot(xstate, xw2, '--*b', 'LineWidth', 2)
+plot(xstate, xw2, '-.b', 'LineWidth', 2)
 plot(xstate, xw3, '-r', 'LineWidth', 2)
-plot(xstate, xw4, '--*r', 'LineWidth', 2)
+plot(xstate, xw4, '-.r', 'LineWidth', 2)
 
-xlabel('Susceptible population at T = 30 conditioned on Y0 and YT')
+xlabel('Susceptible population at T = 30')
+ylabel('Conditional probability when dy=0')
 lgd = legend('GT','GT', 'naive', 'naive');
 lgd.Location = 'northwest';
 hold off
-saveas(gcf, 'susceptible-dy4-T30.png')
-%}
+saveas(gcf, 'susceptible-dy0-t1-25.png')
+
 %% Differenet partition of two stages
 figure
 xmin = 15;
@@ -117,3 +118,74 @@ lgd = legend('t_1=0', 't_1=5', 't_1=15', 't_1=25', 't_1=30');
 %lgd.Location = 'northwest';
 hold off
 saveas(gcf, 'exposed-dy4-twostage.png')
+
+%%
+figure
+xmin = 15;
+xmax = 40;
+xstate = xmin:xmax;
+xw1 = zeros(xmax-xmin+1,1);
+xw2 = zeros(xmax-xmin+1,1);
+xw3 = zeros(xmax-xmin+1,1);
+xw4 = zeros(xmax-xmin+1,1);
+xw5 = zeros(xmax-xmin+1,1);
+
+for i = 1:xmax-xmin+1
+    ind = (V_naive1(1,:)==xstate(i));
+    xw1(i) = sum(w_naive1(ind));
+    ind = (V_naive2(1,:)==xstate(i));
+    xw2(i) = sum(w_naive2(ind));
+    ind = (V_naive3(1,:)==xstate(i));
+    xw3(i) = sum(w_naive3(ind));
+    ind = (V_naive4(1,:)==xstate(i));
+    xw4(i) = sum(w_naive4(ind));
+    ind = (V_naive5(1,:)==xstate(i));
+    xw5(i) = sum(w_naive5(ind));
+end
+
+hold on
+plot(xstate, xw1, '-', 'LineWidth', 2)
+plot(xstate, xw2, '-', 'LineWidth', 2)
+plot(xstate, xw3, '-', 'LineWidth', 2)
+plot(xstate, xw4, '-', 'LineWidth', 2)
+plot(xstate, xw5, '-', 'LineWidth', 2)
+
+xlabel('Susceptible population at T = 30')
+ylabel('Conditional probability given y_0= 5, y_T = 9')
+hold off
+saveas(gcf, 'susceptible-dy4-naive.png')
+%%
+figure
+xmin = 0;
+xmax = 10;
+xstate = xmin:xmax;
+xw1 = zeros(xmax-xmin+1,1);
+xw2 = zeros(xmax-xmin+1,1);
+xw3 = zeros(xmax-xmin+1,1);
+xw4 = zeros(xmax-xmin+1,1);
+xw5 = zeros(xmax-xmin+1,1);
+
+for i = 1:xmax-xmin+1
+    ind = (V_naive1(2,:)==xstate(i));
+    xw1(i) = sum(w_naive1(ind));
+    ind = (V_naive2(2,:)==xstate(i));
+    xw2(i) = sum(w_naive2(ind));
+    ind = (V_naive3(2,:)==xstate(i));
+    xw3(i) = sum(w_naive3(ind));
+    ind = (V_naive4(2,:)==xstate(i));
+    xw4(i) = sum(w_naive4(ind));
+    ind = (V_naive5(2,:)==xstate(i));
+    xw5(i) = sum(w_naive5(ind));
+end
+
+hold on
+plot(xstate, xw1, '-', 'LineWidth', 2)
+plot(xstate, xw2, '-', 'LineWidth', 2)
+plot(xstate, xw3, '-', 'LineWidth', 2)
+plot(xstate, xw4, '-', 'LineWidth', 2)
+plot(xstate, xw5, '-', 'LineWidth', 2)
+
+xlabel('Exposed population at T = 30')
+ylabel('Conditional probability given y_0= 5, y_T = 9')
+hold off
+saveas(gcf, 'exposed-dy4-naive.png')

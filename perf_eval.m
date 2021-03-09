@@ -12,7 +12,7 @@ nu = feval(sys,'nu');
 n_obs = n-n_unobs;
 x0 = feval(sys, 'x0');
 
-Ns = 10000;
+Ns = 3000;
 num_trial = 1000;
 
 state_true = zeros(n, num_trial);
@@ -33,22 +33,46 @@ toc;
 
 %%
 s1_true = state_true(1,:)';
-x_max = max([s1_true; s1_gt; s1_naive]);
-x_min = min([s1_true; s1_gt; s1_naive]);
-x_ref = x_min : x_max;
-figure
-%sz = 40;
-scatter(s1_true, s1_gt, 'filled')
-hold on
-scatter(s1_true, s1_naive, 'filled')
-plot(x_ref, x_ref, 'LineWidth', 2)
-grid on
-hold off
-
-%%
 s1_naive_clean = s1_naive(isfinite(s1_naive));
 s1_naive_true = s1_true(isfinite(s1_naive));
 num_clean = sum(isfinite(s1_naive));
+
+x_max = 20;
+x_min = 0;
+x_ref = x_min : x_max;
+k_gt = s1_gt'*s1_true/(s1_true'*s1_true);
+k_naive = s1_naive_clean'*s1_naive_true/(s1_naive_true'*s1_naive_true);
+
+figure
+hold on
+sz = 20;
+scatter(s1_true, s1_gt, sz, 'b','filled')
+%scatter(s1_true, s1_naive, 'filled')
+plot(x_ref, x_ref, '-r','LineWidth', 1)
+plot(x_ref, k_gt*x_ref, '-.y','LineWidth',1.6)
+xlim([0,20])
+ylim([0,20])
+grid on
+hold off
+xlabel('Actual S1')
+ylabel('Estimated S1')
+saveas(gcf, 'gt_scatter.png')
+
+figure
+hold on
+sz = 20;
+scatter(s1_true, s1_naive, sz, 'b','filled')
+plot(x_ref, x_ref, '-r','LineWidth', 1)
+plot(x_ref, k_gt*x_ref, '-.y','LineWidth',1.6)
+xlim([0,20])
+ylim([0,20])
+grid on
+hold off
+xlabel('Actual S1')
+ylabel('Estimated S1')
+saveas(gcf, 'naive_scatter.png')
+
+%%
 
 err_gt = s1_gt - s1_true;
 err_naive = s1_naive_clean - s1_naive_true;
@@ -57,8 +81,10 @@ figure
 h1 = histogram(s1_gt - s1_true);
 hold on
 h2 = histogram(s1_naive_clean - s1_naive_true);
-legend('gt','naive')
+legend('GT','naive')
 hold off
+xlabel('Error')
+saveas(gcf, 'err-hist.png')
 
 
 bias_gt = mean(err_gt);

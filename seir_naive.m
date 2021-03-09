@@ -14,7 +14,7 @@ nu = feval(sys,'nu');
 n_obs = n-n_unobs;
 x0 = feval(sys,'x0');
 
-Ns = 20000;
+Ns = 10000;
 V = zeros(n,Ns); 
 Vs = zeros(n, Ns);
 w = zeros(1,Ns);
@@ -59,6 +59,8 @@ w_naive = (V(4,:)-x0(4) == dy);
 w_naive = w_naive/sum(w_naive);
 V_naive = V;
 Vs_naive = Vs;
+
+nonzero_percent = sum(w_naive ~= 0)/Ns
 
 %%
 

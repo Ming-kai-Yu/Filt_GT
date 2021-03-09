@@ -1,7 +1,7 @@
 % naive method and two stage method filter
 T = 3;
 t1 = 2.5;
-dy = [2;-17];
+dy = [9;-28];
 
 sys = @four_species;
 c = [1; 1.5; 1.2; 1.5];
@@ -10,10 +10,10 @@ n_unobs = 2;
 nu = feval(sys,'nu'); 
 [n, m] = size(nu);
 n_obs = n-n_unobs;
-x0 = [0; 0; 0; 20];
+x0 = feval(sys, 'x0');
 
 Ns = 10000;
-num_trial = 50;
+num_trial = 500;
 s1_naive = zeros(num_trial, Ns);
 s2_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -47,24 +47,25 @@ for i = 1:5
 end
 
 hold on
-l1 = plot(x_range, x_prob_naive(1,:), '-r', 'LineWidth', 1);
-l2 = plot(x_range, x_prob_naive(2,:), '-r', 'LineWidth', 1);
-l3 = plot(x_range, x_prob_naive(3,:), '-r', 'LineWidth', 1);
-l4 = plot(x_range, x_prob_naive(4,:), '-r', 'LineWidth', 1);
-l5 = plot(x_range, x_prob_naive(5,:), '-r', 'LineWidth', 1);
+l1 = plot(x_range, x_prob_naive(1,:), '-.r', 'LineWidth', 1.2);
+%l2 = plot(x_range, x_prob_naive(2,:), '-.r', 'LineWidth', 1.2);
+%l3 = plot(x_range, x_prob_naive(3,:), ':r', 'LineWidth', 1.6);
+%l4 = plot(x_range, x_prob_naive(4,:), '-r', 'LineWidth', 1);
+%l5 = plot(x_range, x_prob_naive(5,:), '-r', 'LineWidth', 1);
 l6 = plot(x_range, x_prob_gt(1,:), '-b', 'LineWidth', 1);
 l7 = plot(x_range, x_prob_gt(2,:), '-b', 'LineWidth', 1);
-l8 = plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1);
-l9 = plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1);
-l10 = plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1);
-l11 = plot(x_range, pi1, '-g*', 'LineWidth', 1.5);
+%l8 = plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1);
+%l9 = plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1);
+%l10 = plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1);
+l11 = plot(x_range, pi1, '-g*', 'LineWidth', 1);
 
 xlabel('Copy number of S1')
 ylabel('Conditional probability')
 hold off
 legend([l1, l6, l11], {'naive', 'two stage', 'ODE'})
-saveas(gcf, 's1-x3_2-x4_3.png')
+saveas(gcf, 's1-x3_4-x4_7_.png')
 %%
+%{
 figure
 xmin = 0;
 xmax = sum(x0);
@@ -94,47 +95,48 @@ ylabel('Conditional probability')
 legend([l1, l6, l11], {'naive', 'two stage', 'ODE'})
 hold off
 saveas(gcf, 's2.png')
-
+%}
 
 
 %% Plot
 xmin = 0;
 xmax = sum(x0);
 x_range = xmin:xmax;
+
+num_trial = 500;
 x_prob_naive = zeros(num_trial, xmax-xmin+1);
 x_prob_gt = zeros(num_trial, xmax-xmin+1);
+
 
 for i = 1:num_trial
     x_prob_naive(i,:) = get_hist(s1_naive(i,:), w_naive(i,:), x_range);
     x_prob_gt(i,:) = get_hist(s1_gt(i,:), w_gt(i,:), x_range);
+    %x_prob_naive(i,:) = get_hist(s1_naive(i+400,:), w_naive(i+400,:), x_range);
+    %x_prob_gt(i,:) = get_hist(s1_gt(i+400,:), w_gt(i+400,:), x_range);
 end
 
 figure
 hold on
 
-errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1)
-errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-r','LineWidth', 1)
-plot(x_range, pi1, '-k')
+%errorbar(x_range, mean(x_prob_naive)-pi1', 2*std(x_prob_naive)/sqrt(num_trial), '-.r','LineWidth', 1)
+%errorbar(x_range, mean(x_prob_gt)-pi1', 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1)
 
-%{
-plot(x_range, x_prob_naive(1,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(2,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(3,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(4,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(5,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_gt(1,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(2,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
-%}
+errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-.r','LineWidth', 1)
+errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1)
+plot(x_range, pi1, '-g','LineWidth', 1.2)
+
 xlabel('Copy number of S1')
-ylabel('Conditional probability')
-lgd=legend('naive', 'two stage', 'ODE');
+ylabel('Difference with ODE solution')
+lgd=legend('naive', 'two stage');
 %lgd.Location = 'north';
 hold off
-saveas(gcf, 's1-ci-x3_2-x4_3.png')
+saveas(gcf, 'ci-x3_4-x4_7.png')
+
+%% dealing with NaN
+%
+
 %%
+%{
 figure
 xmin = 0;
 xmax = sum(x0);
@@ -152,21 +154,11 @@ errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-r',
 errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1)
 plot(x_range, pi2, '-g*')
 
-%{
-plot(x_range, x_prob_naive(1,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(2,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(3,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(4,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_naive(5,:), '-r', 'LineWidth', 1)
-plot(x_range, x_prob_gt(1,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(2,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
-plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
-%}
+
 xlabel('Copy number of S2')
 ylabel('Conditional probability')
 lgd=legend('naive', 'two stage', 'ODE');
 
 hold off
 saveas(gcf, 'S2-ci.png')
+%}

@@ -3,7 +3,7 @@ function [V, w_naive] = get_V_w_naive(T, dy, sys, c, Ns)
 
 
 nu = feval(sys,'nu');
-[n, m] = size(nu);
+[n, m]= size(nu);
 x0 = feval(sys,'x0');
 
 V = zeros(n,Ns);

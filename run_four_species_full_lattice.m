@@ -2,7 +2,7 @@
 
 tic;
 
-x0 = [0; 0; 0; 20];
+x0 = [0; 0; 0; 35];
 c = [1; 1.5; 1.2; 1.5];
 
 nu1 = [-1; 1; 0; 0];
@@ -53,15 +53,31 @@ p_margnl = [p1, p2, p3, p4]
 % However, eigen vectors in null space doesn't seem easy to be aligned
 % to the invariant space.
 p34 = get_jointx3x4(p_final, base);
-surf(p34)
+
+mesh(p34)
 
 %% filtering
-x3 = 2; x4 = 3;
+x3 = 9; x4 = 7;
 [pi1, pi2] = p1p2_given_x3x4(p_final, base, x3, x4);
 pi_margnl = [pi1, pi2]
 
 toc;
-%% functions deal with conversion
+
+%% saving and loading results
+is_save = 0;
+if is_save
+    fileID = fopen('p_cme.bin', 'r');
+    fwrite(fileID, p_final, 'double');
+    fclose(fileID);
+end
+
+is_load = 0;
+if is_load
+    fileID = fopen('p_cme.bin', 'r');
+    p_recovered = fread(fileID, 'double');
+    fclose(fileID);
+end
+%% local functions dealing with conversions
 function index = state2ind(x, base)
    % n - total copy number of all species
    % base = n+1

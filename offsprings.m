@@ -36,5 +36,7 @@ for j=1:Ns-1
     h = h - offs(j);
 end
 offs(Ns) = h;
+end
+
 
             

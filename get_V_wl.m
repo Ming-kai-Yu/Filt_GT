@@ -69,7 +69,7 @@ for i = 1:Ns
     
     accept = 0; 
     iter = 0;
-    while accept == 0 && iter <= 20
+    while accept == 0 && iter <= 200
         r3 = poissrnd(lambda_gt(3)*t2);
         r2 = r3 + dy(i);
         if r2 >= 0

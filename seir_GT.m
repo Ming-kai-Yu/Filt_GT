@@ -68,7 +68,10 @@ for i = 1:Ns
     V(:,i) = x0;
     ancester_ind(i)=i;
 end
-w = w/sum(w);
+
+%w = w/sum(w);
+[V, wl, k_remaining] = resampling(V, wl, k_remaining);
+
 for piece = 1:num_resampl
      if piece == 1
         piece_dt = t_resampl(1);

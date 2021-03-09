@@ -4,7 +4,7 @@ t1 = 25;
 dy = [14; 2];
 
 sys = @seir;
-c = [0.05; 0.2; 0.05];
+c = 
 n_unobs = 2; 
 
 nu = feval(sys,'nu'); 
@@ -13,7 +13,7 @@ n_obs = n-n_unobs;
 x0 = feval(sys,'x0');
 
 Ns = 10000;
-num_trial = 50;
+num_trial = 10;
 susceptible_naive = zeros(num_trial, Ns);
 exposed_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -57,7 +57,7 @@ plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 
 xlabel('Susceptible population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 9')
+ylabel('Conditional probability')
 hold off
 saveas(gcf, 'susceptible-dy12-2.png')
 %%
@@ -85,7 +85,7 @@ plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 xlabel('Exposed population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 9')
+ylabel('Conditional probability')
 hold off
 saveas(gcf, 'exposed-dy14-2.png')
 
@@ -106,8 +106,8 @@ end
 figure
 hold on
 
-errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-r','LineWidth', 2)
 errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 2)
+errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-r','LineWidth', 2)
 
 %{
 plot(x_range, x_prob_naive(1,:), '-r', 'LineWidth', 1)
@@ -122,7 +122,9 @@ plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 %}
 xlabel('Susceptible population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 13')
+ylabel('Conditional probability')
+lgd=legend('naive', 'two stage');
+lgd.Location = 'north';
 hold off
 saveas(gcf, 'susceptible-dy14-2-ci.png')
 %%
@@ -154,6 +156,6 @@ plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
 plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
 %}
 xlabel('Exposed population at T = 30')
-ylabel('Conditional probability given y_0= 5, y_T = 9')
+ylabel('Conditional probability')
 hold off
 saveas(gcf, 'exposed-dy14-2-ci.png')

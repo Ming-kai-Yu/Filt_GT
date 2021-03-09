@@ -4,7 +4,7 @@ tic
 %% system spec
 T = 30;
 % first stage, evolution during [0, t1]
-t1 = 30
+t1 = 25
 t2 = T - t1;
 delta_y = 4;
 
@@ -20,7 +20,7 @@ x0 = feval(sys,'x0');
 
 %% First stage
 
-Ns = 20000;
+Ns = 50000;
 V = zeros(n,Ns); 
 lambdas = zeros(m, Ns);
 
