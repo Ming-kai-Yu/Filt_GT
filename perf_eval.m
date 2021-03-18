@@ -1,6 +1,6 @@
 % evaluate the performance of the naive method and two stage method filter
 T = 3;
-t1 = 2.5;
+t1 = 1;
 
 
 sys = @four_species;
@@ -12,22 +12,34 @@ nu = feval(sys,'nu');
 n_obs = n-n_unobs;
 x0 = feval(sys, 'x0');
 
-Ns = 3000;
+Ns = 1000;
 num_trial = 1000;
 
 state_true = zeros(n, num_trial);
 s1_naive = zeros(num_trial, 1);
 s1_gt = zeros(num_trial, 1);
+tve_naive = zeros(num_trial, 1);
+tve_gt = zeros(num_trial, 1);
+Hellinger_naive = zeros(num_trial, 1);
+Hellinger_gt = zeros(num_trial, 1);
 %%
 tic;
 for trial = 1:num_trial
     x = ssa(sys, c, x0, T);
     state_true(:, trial) = x;
     dy = x(3:4)-x0(3:4);
-    [V_naive, w] = get_V_w_naive(T, dy, sys, c, Ns);
-    s1_naive(trial) = V_naive(1,:)*w';
-    [V_gt, w] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
-    s1_gt(trial) = V_gt(1,:)*w';
+    [pi1, pi2] = p1p2_given_x3x4(p_final, base, x(3), x(4));
+
+    [V_naive, w_naive] = get_V_w_naive(T, dy, sys, c, Ns);
+    s1_naive(trial) = V_naive(1,:)*w_naive';
+    [V_gt, w_gt] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
+    s1_gt(trial) = V_gt(1,:)*w_gt';
+    x_prob_naive= get_hist(V_naive(1,:), w_naive, x_range);
+    x_prob_gt = get_hist(V_gt(1,:), w_gt, x_range);
+    tve_naive(trial) = sum(abs(x_prob_naive - pi1'));
+    Hellinger_naive(trial) = 1/sqrt(2)*norm(sqrt(x_prob_naive)-sqrt(pi1'));
+    tve_gt(trial) = sum(abs(x_prob_gt - pi1'));
+    Hellinger_gt(trial) = 1/sqrt(2)*norm(sqrt(x_prob_gt)-sqrt(pi1'));
 end
 toc;
 
@@ -113,3 +125,31 @@ l2_lw = sqrt(l2_err^2 - m2_bar);
 l2_up = sqrt(l2_err^2 + m2_bar);
 fprintf('The estimated L2 error for naive method is %f.\n', l2_err)
 fprintf('The 95 pc confidence interval is [%f, %f].\n', l2_lw, l2_up);
+
+%%
+
+tve_gt(isnan(tve_gt)) = 2;
+tve_naive(isnan(tve_naive)) = 2;
+Hellinger_gt(isnan(Hellinger_gt)) = 1;
+Hellinger_naive(isnan(Hellinger_naive)) = 1;
+
+
+edges = 0:0.04:2;
+figure
+hold on
+histogram(tve_gt, edges)
+histogram(tve_naive, edges)
+xlabel('Total variation error')
+legend('GT', 'naive')
+hold off
+saveas(gcf, 'tve_hist_tau_2.png')
+
+edges = 0:0.02:1;
+figure
+hold on
+histogram(Hellinger_gt, edges)
+histogram(Hellinger_naive, edges)
+xlabel('Hellinger distance')
+legend('GT', 'naive')
+hold off
+saveas(gcf, 'hellinger_hist_tau_2.png')

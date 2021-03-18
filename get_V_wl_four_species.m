@@ -1,4 +1,4 @@
-function [V, wl] = get_V_wl_four_species(T, t1, sys, delta_y, c, Ns )
+function [V, wl, lambda_gt] = get_V_wl_four_species(T, t1, sys, delta_y, c, Ns )
 % For scenario that both Infected and Recovered are observed
 % Resample after poissrnd and w generated
 % T:
@@ -54,6 +54,8 @@ if t1== 0
 else
     lambda_gt = mean(lambdas, 2);
 end
+
+
 
 y_T = x0(3:4) + delta_y;
 dy =  y_T - V(3:4,:);
