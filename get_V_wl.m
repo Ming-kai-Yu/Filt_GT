@@ -64,6 +64,10 @@ for i = 1:Ns
     %    fprintf('i = %d ', i)
     %end
     
+    % -----override lambda -----------
+    lambda_gt = feval(sys, 'prop', V(:,i), c);
+    %----------------
+    
     % simulate the count of each reaction r1,r2,r3
     r1 = poissrnd(lambda_gt(1)*t2);
     

@@ -1,7 +1,7 @@
 % naive method and two stage method filter
 T = 3;
-t1 = 3
-dy = [9;-28];
+t1 = 2.8
+
 
 sys = @four_species;
 c = [1; 1.5; 1.2; 1.5];
@@ -11,28 +11,69 @@ nu = feval(sys,'nu');
 [n, m] = size(nu);
 n_obs = n-n_unobs;
 x0 = feval(sys, 'x0');
+dy = [x3 - x0(3); x4-x0(4)];
+
 
 Ns = 1000;
-num_trial = 50;
+num_trial = 100;
 s1_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
 s1_gt = zeros(num_trial, Ns);
 w_gt = zeros(num_trial, Ns);
 lambda_dat = zeros(4, num_trial);
+wp = zeros(num_trial, Ns);
+l = zeros(num_trial, Ns);
 
 %%
 tic;
 
 for trial = 1:num_trial
-    [V_naive, w_naive(trial,:)] = get_V_w_naive(T, dy, sys, c, Ns);
+    [V_naive, w_naive(trial,:), V1_naive] = get_V_w_naive(T, dy, sys, c, Ns, t1);
     s1_naive(trial,:) = V_naive(1,:);
     %[V_gt, w_gt(trial,:)] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
-    [V_gt, w_gt(trial,:), lambda_dat(:,trial)] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
+    [V_gt, w_gt(trial,:), lambda_dat(:,trial), V1_gt, wp(trial,:), l(trial,:), k_dat] ...
+        = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
     s1_gt(trial,:) = V_gt(1,:);
 end
 toc;
 
 
+%% Examine the contribution of samples
+%{
+y_range = 0:20;
+
+y_samp_naive = get_hist(V1_naive(3,:), ones(1,Ns), y_range);
+y_prob_naive = get_hist(V1_naive(3,:), w_naive(i,:), y_range);
+y_prob_gt = get_hist(V1_gt(3,:), w_gt(i,:), y_range);
+y_prob_gt_start = get_hist(V1_gt(3,:), wp, y_range);
+
+figure
+hold on
+plot(y_range, y_prob_naive, '-r')
+plot(y_range, y_prob_gt, '-b')
+plot(y_range, y_prob_gt_start, '-c')
+hold off
+
+
+figure
+trunc = Ns;
+%trunc = 100;
+hold on
+plot(1:trunc, get_ksum(w_naive(1,:)))
+plot(1:trunc, get_ksum(wp(1,:)))
+plot(1:trunc, get_ksum(l(1,:)))
+xlabel('k')
+ylabel('sum of k largest weight')
+lgd = legend('naive', 'wp', 'l');
+lgd.Location = 'southeast';
+title('tau = 0.01, without resampling')
+hold off
+saveas(gcf, 'tau_p01.png')
+
+fprintf('wp == 0 happens %f percent of the time.\n', sum(wp(:)==0)/(Ns*num_trial)*100);
+fprintf('wl == 0 happens %f percent of the time.\n',
+sum(l(:)==0)/(Ns*num_trial)*100);\
+%}
 %% Plot
 xmin = 0;
 xmax = sum(x0);
@@ -45,6 +86,7 @@ for i = 1:num_trial
     x_prob_gt(i,:) = get_hist(s1_gt(i,:), w_gt(i,:), x_range);
 end
 
+figure
 hold on
 l1 = plot(x_range, x_prob_naive(1,:), '-.r', 'LineWidth', 1.2);
 l2 = plot(x_range, x_prob_naive(2,:), '-.r', 'LineWidth', 1.2);
@@ -144,7 +186,7 @@ for i = 1:num_trial
 end
 
 
-[num_clean, Ns] = size(x_prob_naive_clean);
+[num_clean, num_xrange] = size(x_prob_naive_clean);
 cmtve_naive = zeros(num_clean, 1);
 cmtve_gt = zeros(num_trial, 1);
 hellinger_naive = zeros(num_clean, 1);
@@ -222,6 +264,47 @@ ylabel('Square Error')
 lgd=legend('naive', 'two stage');
 %lgd.Location = 'north';
 hold off
-saveas(gcf, 'sqerr-x3_9-x4_7_1000.png')
+%saveas(gcf, 'sqerr-x3_9-x4_7_1000.png')
 
+%% compare with theoretical variance
+%{
+var_dat = zeros(base, 1);
+for i = 1:base
+    x = [i-1, sum(x0)-x3-x4-i+1, x3, x4];
+    index = state2ind(x, base);
+    a = p_final(index);
+    b = p34(x3+1, x4+1);
+    var_dat(i) = a*(b-a)/(Ns*b^3);
+end
 
+figure
+hold on
+plot(x_range, var_dat, '-*')
+plot(x_range, std(x_prob_naive).^2, '--o')
+legend('theory', 'estimated')
+xlabel('S1')
+ylabel('variance')
+saveas(gcf, 'variance_naive.png')
+%}
+
+%%
+is_exam_weights = 0;
+if is_exam_weights
+w_sorted_1= sort(w_gt(1,:), 'descend');
+w_sorted_2= sort(w_gt(2,:), 'descend');
+w_sorted_3= sort(w_gt(3,:), 'descend');
+w_sorted_4= sort(w_gt(4,:), 'descend');
+trunc = 300;
+w_sorted_naive= sort(w_naive(2,:), 'descend');
+figure
+plot(cumsum(w_sorted_1(1:trunc)))
+hold on
+plot(cumsum(w_sorted_2(1:trunc)))
+plot(cumsum(w_sorted_3(1:trunc)))
+plot(cumsum(w_sorted_4(1:trunc)))
+plot(cumsum(w_sorted_naive(1:trunc)), 'LineWidth', 2)
+xlabel('k')
+ylabel('sum of k largest weight')
+title('Ns = 1000, tau = 2, p(x3=9, x4 =7)=0.0261,')
+saveas(gcf, 'weight_tau_2.png')
+end

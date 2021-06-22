@@ -1,4 +1,4 @@
-function [V, w_naive] = get_V_w_naive(T, dy, sys, c, Ns)
+function [V, w_naive, V1] = get_V_w_naive(T, dy, sys, c, Ns, t1)
 % run the naive mathod to sample the state at time T
 
 
@@ -8,6 +8,7 @@ x0 = feval(sys,'x0');
 
 V = zeros(n,Ns);
 w = zeros(1,Ns);
+V1 = zeros(n, Ns);
 
 for k = 1:Ns
     t = 0;
@@ -29,6 +30,9 @@ for k = 1:Ns
         else
             t = T;
         end
+        %if (t<t1)
+        %     V1(:,k) = x;
+        %end
     end
     V(:,k) = x;
 end

@@ -1,4 +1,4 @@
-function [V, wl, lambda_gt] = get_V_wl_four_species(T, t1, sys, delta_y, c, Ns )
+function [V, wl, lambda_gt, V1, w, l, k_dat] = get_V_wl_four_species(T, t1, sys, delta_y, c, Ns )
 % For scenario that both Infected and Recovered are observed
 % Resample after poissrnd and w generated
 % T:
@@ -47,6 +47,7 @@ for k = 1:Ns
     V(:,k) = x;
 end
 
+V1 = V;
 
 %% Second stage: GT
 if t1== 0
@@ -74,8 +75,7 @@ for i = 1:Ns
     
     % simulate the count of each reaction r1,r2,r3
     r1 = poissrnd(lambda_gt(1)*t2);
-    
-    
+ 
     accept = 0; 
     iter = 0;
     while accept == 0 && iter <= 200
@@ -94,9 +94,9 @@ for i = 1:Ns
     % Remarks:
     % By forcing r2, r4 agrees with dy, it's possible to have negative
     % r2,r4
-    if r2 < 0 || r4 < 0
-        w(i)=0;
-    end
+    %if r2 < 0 || r4 < 0
+    %    w(i)=0;
+    %end
 end
 [V, w, k_dat] = resampling(V, w, k_dat);
 

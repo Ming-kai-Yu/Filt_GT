@@ -2,15 +2,15 @@
 
 tic;
 
-x0 = [0; 0; 0; 35];
-c = [1; 1.5; 1.2; 1.5];
+x0 = [20, 10, 0, 5];
+c = [0.05; 0.2; 0.05];
+
 
 nu1 = [-1; 1; 0; 0];
-nu2 = [0; -1; 1; 0];
-nu3 = [0; 0; -1; 1];
-nu4 = [1; 0; 0; -1];
+nu2 = [0; -1; 0; 1];
+nu3 = [0; 0; 1; -1];
 
-nu = [nu1, nu2, nu3, nu4];
+nu = [nu1, nu2, nu3];
 
 
 base = sum(x0)+1;
@@ -25,7 +25,7 @@ for i=1:num_node
     x = ind2state(i,base);
     A(i,i) = -sum(prop(x, c));
     ind_state(i,:)=x';
-    for reac=1:4
+    for reac=1:3
        x_in = x - nu(:,reac);
          if prod (x_in>=0 & x_in<= sum(x0))
              j = state2ind(x_in, base);
@@ -47,7 +47,7 @@ p0(index0) = 1;
 p_final = p(end,:)';
 [p1, p2, p3, p4] = joint2margnl(p_final, base);
 p_margnl = [p1, p2, p3, p4]
-[p1, p2, p3, p4] = joint2margnl(p_2p5, base);
+%[p1, p2, p3, p4] = joint2margnl(p_2p5, base);
 
 
 % It is tricky to find the *stationary distribution* by solving Ax=0.
@@ -55,29 +55,24 @@ p_margnl = [p1, p2, p3, p4]
 % I would expect each vector in the null space corresponds to 
 % one invariant space that x1+x2+x3+x4=k, where k=0,1,...,sum(x0).
 % However, eigen vectors in null space doesn't seem easy to be aligned
-% to the invariant space.
-
-%%
-%p34 = get_jointx3x4(p_final, base);
-p34 = get_jointx3x4(p_final, base);
-mesh(p34)
+% to the invariant space
 
 %% filtering
-x3 = 8; x4 = 6;
-[pi1, pi2] = p1p2_given_x3x4(p_final, base, x3, x4);
-pi_margnl = [pi1, pi2];
+x4 = 6;
+[pi1, pi2, pi3] = p1p2p3_given_x4(p_final, base, x4);
+pi_margnl = [pi1, pi2, pi3];
 
 %% saving and loading results
 is_save = 0;
 if is_save
-    fileID = fopen('p_cme.bin', 'r');
+    fileID = fopen('p_cme_seir.bin', 'r');
     fwrite(fileID, p_final, 'double');
     fclose(fileID);
 end
 
-is_load = 1;
+is_load = 0;
 if is_load
-    fileID = fopen('p_cme.bin', 'r');
+    fileID = fopen('p_cme_seir.bin', 'r');
     p_final = fread(fileID, 'double');
     fclose(fileID);
 end
@@ -104,7 +99,7 @@ function x = ind2state(index, base)
 end
 
 function a = prop(x,c)
-  a = [c(1)*x(1); c(2)*x(2); c(3)*x(3); c(4)*x(4)];
+  a = [c(1)*x(1)*x(4)/sum(x); c(2)*x(2); c(3)*x(4)];
 end
 
 function [p1, p2, p3, p4] = joint2margnl(p, base)
@@ -124,20 +119,22 @@ function [p1, p2, p3, p4] = joint2margnl(p, base)
 end
 
 
-function [p1, p2] = p1p2_given_x3x4(p, base, x3, x4)
+function [p1, p2, p3] = p1p2p3_given_x4(p, base, x4)
   p1 = zeros(base, 1);
   p2 = zeros(base, 1);
-  %states = 0:base-1;
+  p3 = zeros(base, 1);
   num_node = length(p);
   for i=1:num_node
       x = ind2state(i, base);
-      if (x(3)== x3 && x(4)==x4)
+      if (x(4)==x4)
         p1(x(1)+1)=p1(x(1)+1) + p(i);
         p2(x(2)+1)=p2(x(2)+1) + p(i);
+        p3(x(3)+1)=p3(x(3)+1) + p(i);
       end
   end
   p1 = p1/sum(p1);
   p2 = p2/sum(p2);
+  p3 = p3/sum(p3);
 end
 
 function p34 = get_jointx3x4(p, base)
