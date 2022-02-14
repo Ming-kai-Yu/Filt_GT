@@ -1,8 +1,9 @@
 %% building the CME matrix
 
 tic;
+sys = @four_species
 
-x0 = [0; 0; 0; 35];
+x0 = feval(sys, 'x0');
 c = [1; 1.5; 1.2; 1.5];
 
 nu1 = [-1; 1; 0; 0];
@@ -47,7 +48,7 @@ p0(index0) = 1;
 p_final = p(end,:)';
 [p1, p2, p3, p4] = joint2margnl(p_final, base);
 p_margnl = [p1, p2, p3, p4]
-[p1, p2, p3, p4] = joint2margnl(p_2p5, base);
+%[p1, p2, p3, p4] = joint2margnl(p_2p5, base);
 
 
 % It is tricky to find the *stationary distribution* by solving Ax=0.
@@ -63,24 +64,27 @@ p34 = get_jointx3x4(p_final, base);
 mesh(p34)
 
 %% filtering
-x3 = 8; x4 = 6;
-[pi1, pi2] = p1p2_given_x3x4(p_final, base, x3, x4);
+%
+base = sum(x0)+1;
+x3 = 11; x4 = 9;
+[pi1_new, pi2_new] = p1p2_given_x3x4(p_final2, base, x3, x4);
 pi_margnl = [pi1, pi2];
 
 %% saving and loading results
 is_save = 0;
 if is_save
-    fileID = fopen('p_cme.bin', 'r');
+    fileID = fopen('pjoint_four_species.bin', 'w');
     fwrite(fileID, p_final, 'double');
     fclose(fileID);
 end
 
 is_load = 1;
 if is_load
-    fileID = fopen('p_cme.bin', 'r');
-    p_final = fread(fileID, 'double');
+    fileID = fopen('p_x0_new.bin', 'r');
+    p_final2 = fread(fileID, 'double');
     fclose(fileID);
 end
+%}
 %% local functions dealing with conversions
 function index = state2ind(x, base)
    % n - total copy number of all species

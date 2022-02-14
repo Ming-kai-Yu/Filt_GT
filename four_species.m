@@ -18,9 +18,11 @@ if strcmp(info_type,'nu')
  output = nu;
  
 elseif strcmp(info_type,'x0')
-   output = [0; 0; 0; 35];
+   %output = [13; 9; 10; 8];
+   output = [9; 13; 10; 8];
+%    output = [130; 80; 100; 80];
 elseif strcmp(info_type,'T')  
-   output = 20;
+   output = 3;
 elseif strcmp(info_type,'prop')
    x = varargin{1};
    c = varargin{2};

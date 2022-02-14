@@ -1,5 +1,5 @@
 % Specify the system
-ex = 5;
+ex = 6;
 
 if ex == 1
     sys = @linprop;
@@ -22,6 +22,10 @@ elseif ex == 5
     sys = @seir;
     c = [0.05; 0.2; 0.05];
     n_unobs = 3; m_unobs = 1;
+elseif ex == 6
+    sys = @four_species;
+    c = [1; 1.5; 1.2; 1.5];
+    un_unobs = 2; m_unobs = 2;
 end
 
 
@@ -32,7 +36,7 @@ n_obs = n-n_unobs;
 m_obs = m-m_unobs;
 x0 = feval(sys,'x0');
 T = feval(sys,'T');
-
+%T = 1;
 
 t=0; x=x0;
 tarr = t; xarr = x0;
@@ -80,7 +84,7 @@ fwrite(fidf,xarr,'double');
 fclose(fidf);
 %}
 %%
-
+%{
 figure
 plot(tarr,xarr(1,:))
 hold on
@@ -91,6 +95,22 @@ xlabel('time')
 legend('S','E', 'R', 'I')
 %legend('Susceptible', 'Exposed', 'Recovered', 'Infectious')
 %saveas(gcf,'full_sys', 'epsc')
+%}
+%%
+figure
+stairs(tarr,xarr(1,:))
+hold on
+stairs(tarr, xarr(2,:))
+stairs(tarr, xarr(3,:))
+stairs(tarr, xarr(4,:))
+xlabel('time')
+ylabel('')
+lgd =legend('S1','S2', 'S3', 'S4')
+lgd.Location = 'southwest'
+ylim([0, 180])
+%legend('Susceptible', 'Exposed', 'Recovered', 'Infectious')
+saveas(gcf,'four_species_full_sys.png')
+
 
 %% zoom in the trajectory on [0, Ts], Ts<=T
 %{

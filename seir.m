@@ -16,6 +16,7 @@ if strcmp(info_type,'nu')
  
 elseif strcmp(info_type,'x0')
    output = [20; 10; 0; 5];
+   %output = [40; 20; 0; 10];
 elseif strcmp(info_type,'T')  
    output = 40;
 elseif strcmp(info_type,'prop')

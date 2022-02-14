@@ -65,7 +65,7 @@ for i = 1:Ns
     %end
     
     % -----override lambda -----------
-    lambda_gt = feval(sys, 'prop', V(:,i), c);
+    %lambda_gt = feval(sys, 'prop', V(:,i), c);
     %----------------
     
     % simulate the count of each reaction r1,r2,r3
@@ -91,7 +91,7 @@ for i = 1:Ns
     % It's not so worthwhile to spend significant amount of time
     % on a sample that has practically zero weight.
 end
-[V, w, k_dat] = resampling(V, w, k_dat);
+%[V, w, k_dat] = resampling(V, w, k_dat);
 
 for i=1:Ns   
     r1 = k_dat(1,i); r2 = k_dat(2,i); r3 = k_dat(3,i); 

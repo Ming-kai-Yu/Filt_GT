@@ -70,7 +70,7 @@ if is_save
     fclose(fileID);
 end
 
-is_load = 0;
+is_load = 1;
 if is_load
     fileID = fopen('p_cme_seir.bin', 'r');
     p_final = fread(fileID, 'double');
