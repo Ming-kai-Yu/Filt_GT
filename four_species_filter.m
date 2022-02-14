@@ -1,12 +1,22 @@
 % naive method and two stage method filter
 T = 3;
 ts = [0, T];
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 ds = 0.1
 ts = 0:ds:T;
 %ts = 0:0.5:T
 %ts = 0:0.2:T;
 %ts = 0:0.1:T;
 %ts = 0:0.05:T;
+<<<<<<< HEAD
+=======
+=======
+ts1 = 0:T;
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 
 sys = @four_species;
 c = [1; 1.5; 1.2; 1.5];
@@ -16,6 +26,10 @@ nu = feval(sys,'nu');
 [n, m] = size(nu);
 n_obs = n-n_unobs;
 x0 = feval(sys, 'x0');
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 dy = [1,1];
 
 %% --------Piecewise propensity ----------
@@ -30,6 +44,15 @@ end
 
 Ns = 5000;
 num_trial = 100;
+=======
+dy = [3, 3]
+
+
+
+
+Ns = 5000;
+num_trial = 50;
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
 s1_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
 s1_gt = zeros(num_trial, Ns);
@@ -52,6 +75,21 @@ lambda2 = (lambda0 + lambda_T)*0.5;
 
 lambda = lambda2;
 
+<<<<<<< HEAD
+=======
+
+lambda0 = feval(sys,'prop',x0,c);
+lambda1 = [1; 1; 1];
+x_mat = zeros(n, 1000);
+for i = 1:1000
+     x_mat(:,i) = ssa(sys, c, x0, T);
+end
+lambda_T = feval(sys, 'prop', mean(x_mat, 2), c);
+lambda2 = (lambda0 + lambda_T)*0.5;
+
+lambda = lambda0;
+
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 
 %%
 tic;
@@ -62,19 +100,43 @@ for trial = 1:num_trial
     %[V_gt, w_gt(trial,:)] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
     %[V_gt, w_gt(trial,:), lambda_dat(:,trial), V1_gt, wp(trial,:), l(trial,:), k_dat] ...
     %    = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
     %[V_gt, w_gt(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts, sys, dy, c, Ns);
     [V_gt, w_gt(trial,:)] = GT_resampl_four_species(T, lambdas, ts, sys, dy, c, Ns);
     s1_gt(trial,:) = V_gt(1,:);
     %[V_gt, w_gt_resampl(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts1, sys, dy, c, Ns);
     %s1_gt_resampl(trial,:) = V_gt(1,:);
+<<<<<<< HEAD
+=======
+=======
+    [V_gt, w_gt(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts, sys, dy, c, Ns);
+    s1_gt(trial,:) = V_gt(1,:);
+    [V_gt, w_gt_resampl(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts1, sys, dy, c, Ns);
+    s1_gt_resampl(trial,:) = V_gt(1,:);
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 end
 toc;
 
 %%
 fprintf('The empirical probability P(Y=y) is %f\n', sum(w_naive(:))/(num_trial*Ns));
+<<<<<<< HEAD
 %fprintf('The percentage of nonzero GT weight is %f\n', sum(w_gt(:)~=0)/(num_trial*Ns));
 fprintf('The effective sample size (naive) is %f\n',  sum(w_naive(:))/(num_trial));
 %fprintf('The percentage of nonzero GT weight (resampling) is %f\n', sum(w_gt_resampl(:)~=0)/(num_trial*Ns));
+=======
+<<<<<<< HEAD
+%fprintf('The percentage of nonzero GT weight is %f\n', sum(w_gt(:)~=0)/(num_trial*Ns));
+fprintf('The effective sample size (naive) is %f\n',  sum(w_naive(:))/(num_trial));
+%fprintf('The percentage of nonzero GT weight (resampling) is %f\n', sum(w_gt_resampl(:)~=0)/(num_trial*Ns));
+=======
+fprintf('The percentage of nonzero GT weight is %f\n', sum(w_gt(:)~=0)/(num_trial*Ns));
+fprintf('The percentage of nonzero GT weight (resampling) is %f\n', sum(w_gt_resampl(:)~=0)/(num_trial*Ns));
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 
 %% Examine the contribution of samples
 %{
@@ -125,7 +187,14 @@ for i = 1:num_trial
     x_prob_naive(i,:) = get_hist(s1_naive(i,:), w_naive(i,:), x_range);
     x_prob_gt(i,:) = get_hist(s1_gt(i,:), w_gt(i,:), x_range);
     x_prob_gt_resampl(i,:) = get_hist(s1_gt_resampl(i,:), w_gt_resampl(i,:), x_range);
+<<<<<<< HEAD
     ess(i) = norm(w_gt(i,:), 1)^2/norm(w_gt(i,:),2)^2;
+=======
+<<<<<<< HEAD
+    ess(i) = norm(w_gt(i,:), 1)^2/norm(w_gt(i,:),2)^2;
+=======
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 end
 
 fprintf('The mean of effective sample size is %f\n', mean(ess))
@@ -151,10 +220,22 @@ l8 = plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1);
 xlabel('S1')
 ylabel('Estimated conditional distribution')
 hold off
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 legend([l1, l6], {'naive', 'GT'})
 %saveas(gcf, 'dy11.png')
 end
 %% Plot sample distribution of S2
+<<<<<<< HEAD
+=======
+=======
+legend([l1, l6], {'naive', 'GT', 'GT resample'})
+%saveas(gcf, 'dy11.png')
+%% Plot S2
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 %{
 figure
 xmin = 0;
@@ -187,6 +268,10 @@ hold off
 saveas(gcf, 's2.png')
 %}
 %% Errorbar plot
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 %pi1 = pi1_new;
 is_plot_errorbar = 0;
 if is_plot_errorbar
@@ -229,6 +314,7 @@ plot(x_range, pi1, '-ok')
 xlim([3 22])
 ylim([-0.01 0.25])
 title('naive')
+<<<<<<< HEAD
 
 subplot(1, 3, 2)
 hold on
@@ -238,6 +324,17 @@ xlim([3 22])
 ylim([-0.01 0.25])
 title('GT')
 
+=======
+
+subplot(1, 3, 2)
+hold on
+errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1.5)
+plot(x_range, pi1, '-ok')
+xlim([3 22])
+ylim([-0.01 0.25])
+title('GT')
+
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 subplot(1, 3, 3)
 hold on
 errorbar(x_range, mean(x_prob_gt_resampl), 2*std(x_prob_gt_resampl)/sqrt(num_trial), '-m','LineWidth', 1.5)
@@ -247,6 +344,40 @@ ylim([-0.01 0.25])
 title('GT ')
 saveas(gcf, 'naive-gt-ode.png')
 end
+<<<<<<< HEAD
+=======
+=======
+figure
+hold on
+
+errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial), '-r','LineWidth', 1.2)
+%errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b','LineWidth', 1.2)
+errorbar(x_range, mean(x_prob_gt_resampl), 2*std(x_prob_gt_resampl)/sqrt(num_trial), '-k','LineWidth', 1.2)
+%plot(x_range, pi1, '-*g')
+
+%{
+plot(x_range, x_prob_naive(1,:), '-r', 'LineWidth', 1)
+plot(x_range, x_prob_naive(2,:), '-r', 'LineWidth', 1)
+plot(x_range, x_prob_naive(3,:), '-r', 'LineWidth', 1)
+plot(x_range, x_prob_naive(4,:), '-r', 'LineWidth', 1)
+plot(x_range, x_prob_naive(5,:), '-r', 'LineWidth', 1)
+plot(x_range, x_prob_gt(1,:), '-b', 'LineWidth', 1)
+plot(x_range, x_prob_gt(2,:), '-b', 'LineWidth', 1)
+plot(x_range, x_prob_gt(3,:), '-b', 'LineWidth', 1)
+plot(x_range, x_prob_gt(4,:), '-b', 'LineWidth', 1)
+plot(x_range, x_prob_gt(5,:), '-b', 'LineWidth', 1)
+%}
+xlabel('S1')
+ylabel('Estimated conditional distribution')
+%lgd = legend('Naive', 'GT', 'ODE');
+xlim([15 50])
+ylim([-0.01 0.15])
+lgd = legend('Naive', 'GT');
+lgd.Location = 'Northeast';
+hold off
+saveas(gcf, 'errorbar-3x0-resampl.png')
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 %% Plot
 %{
 xmin = 0;
@@ -286,8 +417,35 @@ hold off
 %{
 %pi1 = pi1_new;
 for i = 1:num_trial
+<<<<<<< HEAD
     cmtve_naive(i) = sum(abs(x_prob_naive(i,:) - pi1'));
     hellinger_naive(i) = 1/sqrt(2)*norm(sqrt(x_prob_naive(i,:))-sqrt(pi1'));
+=======
+<<<<<<< HEAD
+    cmtve_naive(i) = sum(abs(x_prob_naive(i,:) - pi1'));
+    hellinger_naive(i) = 1/sqrt(2)*norm(sqrt(x_prob_naive(i,:))-sqrt(pi1'));
+=======
+  if is_finite(i)
+      x_prob_naive_clean(row,:) = x_prob_naive(i,:);
+      row = row + 1;
+  end
+end
+
+
+[num_clean, num_xrange] = size(x_prob_naive_clean);
+cmtve_naive = zeros(num_clean, 1);
+cmtve_gt = zeros(num_trial, 1);
+hellinger_naive = zeros(num_clean, 1);
+hellinger_gt = zeros(num_trial, 1);
+
+
+%{
+
+for i = 1:num_clean
+    cmtve_naive(i) = sum(abs(x_prob_naive_clean(i,:) - pi1'));
+    hellinger_naive(i) = 1/sqrt(2)*norm(sqrt(x_prob_naive_clean(i,:))-sqrt(pi1'));
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
+>>>>>>> 323078900b5a661ab1a241da13433dbf801ecc8d
 end
 
 for i = 1:num_trial
