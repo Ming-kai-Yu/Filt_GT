@@ -1,8 +1,18 @@
 function [x, l] = evolution_gt(V, r, sys, lambda, delta_t, c)
     % 
+<<<<<<< HEAD
+    r1 = r(1); r2 = r(2); 
+    %r3 = r(3); 
+    %r4 = r(4);
+    %nr = r1+r2+r3;
+    nr = sum(r);
+    %type = [ones(r1,1); 2*ones(r2,1); 3*ones(r3,1); 4*ones(r4,1)];
+    type =  [ones(r1,1); 2*ones(r2,1)];
+=======
     r1 = r(1); r2 = r(2); r3 = r(3); 
     nr = r1+r2+r3;
     type = [ones(r1,1); 2*ones(r2,1); 3*ones(r3,1)];
+>>>>>>> 3e2c5508fa1e3929159da665240b82dbc04a266a
     type_dat = type(randperm(nr));
     t_dat = sort(rand(nr,1)*delta_t);
     
