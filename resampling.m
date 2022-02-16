@@ -6,7 +6,7 @@ function [V_new, w_new, k_new] = resampling(V, w, k)
     V_new = zeros(n_unobs, Ns);
     w_new = zeros(1, Ns);
     k_new = zeros(m, Ns);
-    % Implement the branching algorithm.
+    
     offs = offsprings(w);
     %sort_offs = sort(offs, 'descend');
     i=1; ind=1;

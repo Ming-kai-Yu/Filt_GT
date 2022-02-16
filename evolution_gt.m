@@ -1,20 +1,13 @@
 function [x, l] = evolution_gt(V, r, sys, lambda, delta_t, c)
-    % 
+    % Evolving the state and likelihood of the simulation process.
 
-    r1 = r(1); r2 = r(2); 
-    %r3 = r(3); 
-    %r4 = r(4);
-    %nr = r1+r2+r3;
-    nr = sum(r);
-    %type = [ones(r1,1); 2*ones(r2,1); 3*ones(r3,1); 4*ones(r4,1)];
-    type =  [ones(r1,1); 2*ones(r2,1)];
-
-    r1 = r(1); r2 = r(2); %r3 = r(3); 
+    m = length(r);
     nr = sum(r);
     
-    % Needs a loop here
-    type = [ones(r1,1); 2*ones(r2,1)];
-    %type = [ones(r1,1); 2*ones(r2,1); 3*ones(r3,1)];
+    type = [];
+    for j=1:m
+        type = [type; j*ones(r(j),1)];
+    end
 
     type_dat = type(randperm(nr));
     t_dat = sort(rand(nr,1)*delta_t);

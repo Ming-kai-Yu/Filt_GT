@@ -2,7 +2,7 @@
 T = 3;
 ts = [0, T];
 
-ds = 0.1
+ds = 0.5
 ts = 0:ds:T;
 %ts = 0:0.5:T
 %ts = 0:0.2:T;
@@ -23,6 +23,11 @@ x0 = feval(sys, 'x0');
 dy = [1,1];
 
 %% --------Piecewise propensity ----------
+A1 = [-c(1), 0, 0, c(4);
+    c(1), -c(2), 0, 0;
+    0, c(2), -c(3), 0;
+    0, 0, c(3), -c(4)];
+
 lambdas = zeros(4, length(ts));
 x_dat = zeros(4, length(ts));
 for i = 1:length(ts)
@@ -32,7 +37,7 @@ end
 %%
 
 
-Ns = 5000;
+Ns = 1000;
 num_trial = 100;
 dy = [3, 3]
 
@@ -40,7 +45,7 @@ dy = [3, 3]
 
 
 Ns = 5000;
-num_trial = 50;
+num_trial = 10;
 
 s1_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -82,26 +87,14 @@ tic;
 for trial = 1:num_trial
     [V_naive, w_naive(trial,:)] = get_V_w_naive(T, dy, sys, c, Ns);
     s1_naive(trial,:) = V_naive(1,:);
-    %[V_gt, w_gt(trial,:)] = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
-    %[V_gt, w_gt(trial,:), lambda_dat(:,trial), V1_gt, wp(trial,:), l(trial,:), k_dat] ...
-    %    = get_V_wl_four_species(T, t1, sys, dy, c, Ns);
 
-    %[V_gt, w_gt(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts, sys, dy, c, Ns);
     [V_gt, w_gt(trial,:)] = GT_resampl_four_species(T, lambdas, ts, sys, dy, c, Ns);
     s1_gt(trial,:) = V_gt(1,:);
-    %[V_gt, w_gt_resampl(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts1, sys, dy, c, Ns);
-    %s1_gt_resampl(trial,:) = V_gt(1,:);
-
-    [V_gt, w_gt(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts, sys, dy, c, Ns);
-    s1_gt(trial,:) = V_gt(1,:);
-    [V_gt, w_gt_resampl(trial,:)] = get_V_wl_GT_resampl_four_species(T, lambda, ts1, sys, dy, c, Ns);
-    s1_gt_resampl(trial,:) = V_gt(1,:);
-
 end
 toc;
 
 %%
-fprintf('The empirical probability P(Y=y) is %f\n', sum(w_naive(:))/(num_trial*Ns));
+fprintf('The estimated probability P(Y=y) is %f\n', sum(w_naive(:))/(num_trial*Ns));
 
 %fprintf('The percentage of nonzero GT weight is %f\n', sum(w_gt(:)~=0)/(num_trial*Ns));
 fprintf('The effective sample size (naive) is %f\n',  sum(w_naive(:))/(num_trial));
@@ -174,7 +167,7 @@ fprintf('with confidence intv [%f, %f]\n', ...
     mean(ess) - 2*std(ess)/sqrt(num_trial), mean(ess) + 2*std(ess)/sqrt(num_trial))
 
 %% Plot sample distributions
-is_plot_samples = 0;
+is_plot_samples = 1;
 if is_plot_samples == 1
 figure
 hold on
@@ -196,9 +189,6 @@ hold off
 legend([l1, l6], {'naive', 'GT'})
 %saveas(gcf, 'dy11.png')
 end
-%% Plot sample distribution of S2
-legend([l1, l6], {'naive', 'GT', 'GT resample'})
-%saveas(gcf, 'dy11.png')
 %% Plot S2
 %{
 figure
