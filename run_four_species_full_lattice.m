@@ -1,7 +1,7 @@
 %% building the CME matrix
 
 tic;
-sys = @four_species
+sys = @four_species;
 
 x0 = feval(sys, 'x0');
 c = [1; 1.5; 1.2; 1.5];
@@ -67,7 +67,7 @@ mesh(p34)
 %
 base = sum(x0)+1;
 x3 = 11; x4 = 9;
-[pi1_new, pi2_new] = p1p2_given_x3x4(p_final2, base, x3, x4);
+[pi1, pi2] = p1p2_given_x3x4(p_final, base, x3, x4);
 pi_margnl = [pi1, pi2];
 
 %% saving and loading results
@@ -81,7 +81,7 @@ end
 is_load = 1;
 if is_load
     fileID = fopen('p_x0_new.bin', 'r');
-    p_final2 = fread(fileID, 'double');
+    p_final = fread(fileID, 'double');
     fclose(fileID);
 end
 %}
