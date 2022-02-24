@@ -1,4 +1,4 @@
-function [V, l_dat] = cle_approx(T, sys, dy, c, Ns)
+function [V, l_dat] = cle_approx(T, sys, dy, c, Ns, sigma)
 % ------------------------------------------------
 % Weight importance resampling
 % conditional intensity of the jth reaction 
@@ -27,6 +27,8 @@ l_dat = ones(1,Ns);
 Proj = [zeros(n2, n-n2), eye(n2)]; 
 yT = Proj*x0 + dy;
 
+%error=[];
+
 for k = 1:Ns
     t = 0;
     x = x0;
@@ -34,7 +36,17 @@ for k = 1:Ns
     while(t<T)
         dt = T - t;
         lambda = feval(sys,'prop',x,c);
-        harzard = harzard_cle(x, yT, sys, dt, c);
+        
+        %diagnosis
+        harzard_theo = lambda*normpdf(yT,x-1-c*(x-1)*dt,sqrt(c*(x-1)*dt))/normpdf(yT, x-c*x*dt, sqrt(c*x*dt));
+        harzard = harzard_cle(x, yT, sys, dt, c, sigma);
+        %if harzard ~= harzard_theo
+        %if harzard - harzard_theo > 0.001
+        if (abs(harzard -harzard_theo)/harzard_theo >=0.001)
+            fprintf('-')
+        end
+        harzard = harzard_cle(x, yT, sys, dt, c, sigma);
+        
         harzard0 = sum(harzard);
         tau = log(1/rand)/harzard0;
         mu = harzard./lambda;
@@ -58,4 +70,5 @@ for k = 1:Ns
     l_dat(k) = l;
 end
 
+l_dat = l_dat./sum(l_dat);
 end
