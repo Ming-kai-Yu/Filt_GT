@@ -1,5 +1,6 @@
-function [V, w_overall] = get_V_wl_GT_resampl(T, lambda, ts, sys, dy, c, Ns )
+function [V, w] = get_V_wl_GT_resampl(t0, T, lambda, ts, sys, dy, c, Ns)
 % GT filtering algorithm with resampling
+% V = V(t0)
 
 
 % ts: vector of predetermined time for resampling
@@ -17,7 +18,7 @@ V = x0.*ones(n, Ns);
 %lambda = feval(sys,'prop',x0,c);
 w_poiss = ones(1,Ns);
 l = ones(1,Ns);
-w_overall = zeros(1,Ns);
+w = ones(1,Ns); %overall weight
 k_mat = zeros(m, Ns);
 
 
@@ -33,6 +34,7 @@ end
 Nl = length(ts);
 
 % Generate K
+%{
 for i = 1:Ns    
     % simulate the count of each reaction r1,r2,r3
     r1 = poissrnd(lambda(1)*T);
@@ -48,31 +50,38 @@ for i = 1:Ns
     w_poiss(i) = poisspdf(r2, lambda(2)*T);
     k_mat(:,i) = [r1; r2; r3];
 end
+%}
 
+%prop_sum = zeros(m,1);
+%for ind = 1:Nl-1
+%    prop_sum = prop_sum + lambda(:,ind)*(ts(ind+1)-ts(ind));
+%end
+k_mat = -dy*ones(1,Ns);
 
-for ind = 2:Nl
+ind = 2;
+while ts(ind-1)<=t0
     dt = ts(ind)-ts(ind-1);
     t = ts(ind-1);
     
     r_period = binornd(k_mat, dt/(T-t));
     k_mat = k_mat-r_period;
+    s = t0 - ts(ind-1);
     
     for i = 1:Ns
-        [V(:,i), l(i)] = evolution_gt(V(:,i), r_period(:,i), sys, lambda, dt, c);
+        [V(:,i), l(i)] = evolution_gt2(V(:,i), r_period(:,i), sys, lambda(ind-1), dt, c, s);
     end
     
     if ind == 2
-        w_overall = w_poiss.*l;
+        w = w_poiss.*l;
     else
-        w_overall = l;
+        w = l;
     end
     
     if ind ~= Nl
-        [V, w_overall, k_mat] = resampling(V, w_overall, k_mat);
+        [V, w, k_mat] = resampling(V, w, k_mat);
     end
+    ind = ind + 1;
 end
-
-
 
 
 end

@@ -1,4 +1,4 @@
-function [x, l] = evolution_gt(x0, r, sys, lambda, T, c, s)
+function [V, l] = evolution_gt2(x0, r, sys, lambda, T, c, s)
     % Evolving the state and likelihood of the simulation process.
     % x = V(s), 0 <= s <= delta_t.
 
@@ -19,28 +19,27 @@ function [x, l] = evolution_gt(x0, r, sys, lambda, T, c, s)
     nu = feval(sys,'nu'); 
     [n,m] =size(nu);
     x = x0;
+    V = x0;
     l = 1;
     t = 0;
     
     for j = 1:nr
-        if t_dat(j)<s
-            % evolve state x and likelihood l
-            mu = feval(sys,'prop',x,c);
-            mu = mu./lambda;
-            l = l*mu(type_dat(j));
-            l = l*exp((ones(m,1)-mu)'*lambda*dt(j));
-            x = x + nu(:,type_dat(j));
-            t = t_dat(j);
-        else
-            break
+        if (s>=t && s<t_dat(j))
+            V = x;
         end
+        % evolve state x and likelihood l
+        mu = feval(sys,'prop',x,c);
+        mu = mu./lambda;
+        l = l*mu(type_dat(j));
+        l = l*exp((ones(m,1)-mu)'*lambda*dt(j));
+        x = x + nu(:,type_dat(j));
+        t = t_dat(j);
     end
     
     mu = feval(sys,'prop',x,c);
     mu = mu./lambda;
-    t_final = min(s, T);
     if nr > 0
-        l = l*exp((ones(m,1)-mu)'*lambda*(t_final-t));
+        l = l*exp((ones(m,1)-mu)'*lambda*(T-t));
     else
         l = l*exp((ones(m,1)-mu)'*lambda*T);
     end
