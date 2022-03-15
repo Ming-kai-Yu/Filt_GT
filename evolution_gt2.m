@@ -24,9 +24,6 @@ function [V, l] = evolution_gt2(x0, r, sys, lambda, T, c, s)
     t = 0;
     
     for j = 1:nr
-        if (s>=t && s<t_dat(j))
-            V = x;
-        end
         % evolve state x and likelihood l
         mu = feval(sys,'prop',x,c);
         mu = mu./lambda;
@@ -34,6 +31,9 @@ function [V, l] = evolution_gt2(x0, r, sys, lambda, T, c, s)
         l = l*exp((ones(m,1)-mu)'*lambda*dt(j));
         x = x + nu(:,type_dat(j));
         t = t_dat(j);
+        if (t <= s)
+            V = x;
+        end
     end
     
     mu = feval(sys,'prop',x,c);
