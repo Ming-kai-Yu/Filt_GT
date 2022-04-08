@@ -1,10 +1,13 @@
 % Different proposal propensities
 T = 0.5;
-ts = [0, T];
+ds = 0.1
+ts = 0:ds:0.5;
+%ts = [0, 0.5];
 t = 0.2;
 
 sys = @death;
-c = 0.5;
+c=0.5;
+c = 4;
 n_unobs = 2; 
 
 nu = feval(sys,'nu'); 
@@ -14,7 +17,6 @@ x0 = feval(sys, 'x0');
 sigma = 0;
 
 
-%% x_T quantile
 x_list = 0:50;
 Fx = binocdf(x_list, x0, exp(-c*T));
 quantile = 0.01;
@@ -28,15 +30,22 @@ dy = yT - x0;
 fprintf('------System info------------\n')
 fprintf('x0 = %d, c = %2.2f, T = %2.2f, t = %2.2f.\n', x0, c, T, t)
 fprintf('quantile = %2.2f, xT = %d, sigma = %2.2f.\n', quantile, yT, sigma)
+
+
+% piecewise const propensity for GT method -- based on linear change
+lambdas = c*x0 - c*(x0 -xT)/T *ts;
+% piecewise const propensity for GT method -- based on exponential change
+rate = log(x0/xT)/T;
+lambdas2 = c*x0*exp(-rate*ts);
+%lambdas2 = x0*exp(-rate*ts);
+
 %%
+plot(ts, lambdas, '-b'); hold on; plot(ts, lambdas2, '-r')
+ylim([0, x0])
 
-
+%%
 Ns = 1000;
 num_trial = 100;
-% piecewise linear propensity for GT method
-lambda = x0 - (x0 -xT)/T *ts;
-
-
 
 x_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -60,7 +69,8 @@ for trial = 1:num_trial
     [x_naive(trial,:), w_naive(trial,:)] = naive(t, T, dy, sys, c, Ns);
     %[V_gaussian, w_gaussian(trial,:)] = lin_gaussian_approx(T, sys, dy, c, Ns);
     %[x_cle(trial,:), w_cle(trial,:)] = cle_approx(T, sys, dy, c, Ns, sigma);
-    [x_gt(trial,:), w_gt(trial,:)] = get_V_wl_GT_resampl(t, T, lambda, ts, sys, dy, c, Ns);
+    %[x_gt(trial,:), w_gt(trial,:)] = get_V_wl_GT_resampl(t, T, lambda, ts, sys, dy, c, Ns);
+    [x_gt(trial,:), w_gt(trial,:)] = GT_resampl(t, T, lambdas2, ts, sys, dy, c, Ns);
     [x_ch(trial,:), w_ch(trial,:)] = sim_conditional_prop(t, T, sys, dy, c, Ns);
     [x_cpa(trial,:), w_cpa(trial,:)] = sim_conditional_prop_exact(t, T, sys, dy, c, Ns);
 end
@@ -115,11 +125,11 @@ lgd = legend('Exact', 'GT', 'naive', 'a(x|y)', 'a(x,t|y)');
 lgd.Location = 'northwest';
 xlabel('xt')
 ylabel('pi(xt|x0,xT)')
-xlim([30, 50])
+xlim([10, 50])
 title('t=0.2, x0=50, xT=32, quantile=0.01')
 saveas(gcf, 'gt_naive_cprop_qt_p01.png')
 
-%{
+
 figure
 hold on
 errorbar(x_range, mean(x_prob_gt)-pi_dist_theo, 2*std(x_prob_gt)/sqrt(num_trial), '-b')
@@ -130,7 +140,7 @@ lgd = legend('GT', 'naive', 'a(x|y)');
 lgd.Location = 'northwest';
 xlabel('xt')
 ylabel('pi(xt|x0,xT)')
-xlim([30, 50])
+xlim([0, 50])
 title('t=0.2, x0=50, xT=45, quantile=0.99')
 saveas(gcf, 'gt_naive_cprop_qt_p99.png')
 
@@ -143,9 +153,9 @@ plot(x_range, x_prob_naive(1,:),'--r')
 plot(x_range, x_prob_naive(2,:),'--r')
 plot(x_range, x_prob_ch(1,:),'.-g')
 plot(x_range, x_prob_ch(2,:),'.-g')
-xlim([30, 50])
+xlim([0, 50])
 hold off
-%}
+
 
 end
 
