@@ -5,11 +5,13 @@ function [V, w_naive] = naive(t0, T, dy, sys, c, Ns)
 
 nu = feval(sys,'nu');
 [n, m]= size(nu);
+n2 = length(dy);
 x0 = feval(sys,'x0');
 
-V = x0*zeros(n,Ns);
+V = x0.*ones(n,Ns);
 w_naive = zeros(1,Ns);
 %V1 = zeros(n, Ns);
+
 
 for k = 1:Ns
     t = 0;
@@ -36,13 +38,13 @@ for k = 1:Ns
         end
     end
     %V(:,k) = x;
-    w_naive(k) = ((x-x0)==dy);
+    w_naive(k) = (x(end-n2+1:end)==x0(end-n2+1:end)+dy);
 end
 
-if length(dy) == 2
-    w_naive = (V(3,:)-x0(3) == dy(1) & V(4,:)-x0(4) == dy(2));
+%if length(dy) == 2
+%    w_naive = (V(end-1,:)-x0(end-1) == dy(1) & V(end,:)-x0(end) == dy(2));
 %elseif length(dy) == 1
-%    w_naive = (x-x0(end) == dy);
+%    w_naive = (x(end-n2+1)-x0(end) == dy);
 %end
-w_naive = w_naive/sum(w_naive);
+naive = w_naive/sum(w_naive);
 end
