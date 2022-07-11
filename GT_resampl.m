@@ -1,4 +1,4 @@
-function [V_t0, l] = GT_resampl(t0, T, lambdas, ts, sys, dy, c, Ns)
+function [V_t0, l] = GT_resampl(t0, T, lambdas, dt_dat, sys, dy, c, Ns)
 % GT filtering algorithm with resampling
 % V = V(t0)
 % Right now, it's specific to the simulation of death model 
@@ -15,8 +15,6 @@ x0 = feval(sys, 'x0');
 V = x0.*ones(n, Ns); 
 Vs = x0.*ones(n, Ns);
 V_t0 = x0.*ones(n, Ns);
-%dy =  y_T*ones(1,Ns) - V(4,:);
-%y_T = x0(4) + dy;
 
 %lambda = feval(sys,'prop',x0,c);
 w_poiss = ones(1,Ns);
@@ -24,48 +22,64 @@ l = ones(1,Ns);
 w = ones(1,Ns); %overall weight
 k_mat = zeros(m, Ns);
 
-% ts = [0, intermediate time, T]
-if ts(1) ~= 0
-    ts = [0, ts];
-end
-if ts(end) ~= T
-    ts = [ts, T];
-end
 
-Nl = length(ts);
+
+Nl = length(dt_dat);
 
 prop_sum = zeros(m,1);
-for ind = 1:Nl-1
-    prop_sum = prop_sum + lambdas(:,ind)*(ts(ind+1)-ts(ind));
+for i = 1:Nl
+    prop_sum = prop_sum + lambdas(:,i)*dt_dat(i);
 end
+t_dat = cumsum(dt_dat);
+t_dat = [0, t_dat(1:end-1)];
 
 % Will use a function to generate reaction counts in the future
-k_mat = -dy*ones(1,Ns);
-%w_poiss = ones(1, Ns);
-%l = w_poiss.*l;
+if feval(sys, 'name') == "death"
+    k_mat = -dy*ones(1,Ns);
+    w_poiss = ones(1, Ns);
+elseif feval(sys, 'name') == "rev_two_species"
+    for i = 1:Ns
+        accept = 0;
+        %iter = 0;
+        while accept == 0
+        %while accept == 0 && iter <= 200
+            r1 = poissrnd(prop_sum(1));
+            r2 = r1 - dy;
+            if (r2 >= 0)
+                accept = 1;
+            end
+            %iter = iter + 1;
+        end
+        w_poiss(i) = poisspdf(r2, prop_sum(2));
+        k_mat(:,i) = [r1; r2];
+    end
+end
 
 
-for ind = 2:Nl
-    dt = ts(ind)-ts(ind-1);
-    t = ts(ind-1);
+l = w_poiss.*l;
+
+
+for ind = 1:Nl
+    dt = dt_dat(ind);
+    t = t_dat(ind); %left endpoint of subinterval
     
     
-    p=lambdas(:,ind-1)*dt./prop_sum;
-    if p < 1
-        r_period = binornd(k_mat, p);
+    p=lambdas(:,ind)*dt./prop_sum;
+    if max(p) < 1
+        r_period = binornd(k_mat, p.*ones(m, Ns));
     else
         r_period = k_mat;
     end
     k_mat = k_mat-r_period;
-    prop_sum = prop_sum - lambdas(:,ind-1)*dt;
+    prop_sum = prop_sum - lambdas(:,ind)*dt;
     
-    s = t0 - ts(ind-1);
+    s = t0 - t_dat(ind);
     
     for i = 1:Ns
-        [V(:,i), l(i), Vs(i)] = evolution_gt2(V(:,i), l(i), r_period(:,i), sys, lambdas(ind-1), dt, c, s);
+        [V(:,i), l(i), Vs(:,i)] = evolution_gt2(V(:,i), l(i), r_period(:,i), sys, lambdas(:,ind), dt, c, s);
     end
     
-    if (t0 >= ts(ind-1))
+    if (t0 >= t)
         V_t0 = Vs;
     end
     
