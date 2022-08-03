@@ -1,10 +1,10 @@
 % SEIR model, conditioned on the observation at Y(0) and Y(T)
-tic
+
 
 %% system spec
 T = 30;
 % first stage, evolution during [0, t1]
-t1 = 25
+t1 = 25;
 t2 = T - t1;
 delta_y = 4;
 
@@ -20,7 +20,7 @@ x0 = feval(sys,'x0');
 
 %% First stage
 
-Ns = 50000;
+Ns = 10^5;
 V = zeros(n,Ns); 
 lambdas = zeros(m, Ns);
 
@@ -42,7 +42,7 @@ for k = 1:Ns
             end      
             x = x + nu(:,i);
             t = t + tau;
-            nr = nr+1;
+            %nr = nr+1;
         else
             t = t1;
         end
@@ -54,64 +54,46 @@ end
 V_stage1 = V;
 
 %% Second stage: GT
-if t1== 0
-    lambda_gt = feval(sys,'prop',x0,c);
-else
-    lambda_gt = mean(lambdas, 2);
-end
-
 y_T = x0(4) + delta_y;
-dy =  y_T*ones(1,Ns) - V(4,:);
-
+dy =  y_T*ones(1,Ns) - V_stage1(4,:);
 
 w = zeros(1,Ns);
 l = zeros(1,Ns);
-wl = zeros(1, Ns);
 
 for i = 1:Ns
-    
-    %if mod(i,1000) == 0
-    %    fprintf('i = %d ', i)
-    %end
-    
-    % simulate the count of each reaction r1,r2,r3
-    r1 = poissrnd(lambda_gt(1)*t2);
-    
-    accept = 0; 
-    iter = 0;
-    while accept == 0 && iter <= 20
+    accept = 0;
+    while accept == 0
+        ind = randi(Ns);
+        z0 = V_stage1(:,ind);
+        
+        % choices of propensities
+        lambda_gt = mean(lambdas, 2);
+        %lambda_gt = feval(sys,'prop',z0,c);
+        
+        % simulate the count of each reaction r1,r2,r3
+        r1 = poissrnd(lambda_gt(1)*t2);
         r3 = poissrnd(lambda_gt(3)*t2);
-        r2 = r3 + dy(i);
+        r2 = r3 + dy(ind);
         if r2 >= 0
             accept = 1;
         end
-        iter = iter + 1;
     end
     w(i) = poisspdf(r2, lambda_gt(2)*t2);
-    
-    % Remarks:
-    % The purpose of setting a maximum number of itermation here 
-    % is to prevent being trapped in the while loop for a very long time.
-    % For instance, if dy = -12, to get a sample accepted, we would need
-    % r3 >= 12, while Prob(R3 >= 12) is approximately 10^(-7).
-    % It's not so worthwhile to spend significant amount of time
-    % on a sample that has practically zero weight.
-    
     
     num_react = r1+r2+r3;
     type = [ones(r1,1); 2*ones(r2,1); ...
         3*ones(r3,1)];
     type_dat = type(randperm(num_react));
     t_dat = sort(rand(num_react,1)*t2);
-    [V(:,i),l(i)] = evolve_state_l(V(:,i), sys, t_dat, type_dat, ...
-        lambda_gt, t2, c, 1);
+    [V(:,i),l(i)] = evolve_state_l(z0, sys, t_dat, type_dat, ...
+        lambda_gt, t2, c, w(i));
 end
 
-wl = w .* l;
+wl = w.*l;
 wl = wl/sum(wl);
 fprintf('Percent of zero weight in overall weight is %f percent.\n',...
     sum(wl==0)/Ns*100);
-toc;
+
 
 %%
 figure
@@ -132,7 +114,7 @@ end
 plot(xstate, xw, '-x', 'LineWidth', 2)
 hold on
 plot(xstate, xw2, '--*', 'LineWidth', 2)
-xlabel(['Susceptible population at t = ', num2str(ts)])
+xlabel(['Susceptible population distribution at t = ', num2str(ts)])
 legend('GT', 'naive')
 hold off
 %saveas(gcf, 'susceptible-dy8-t5.png')
