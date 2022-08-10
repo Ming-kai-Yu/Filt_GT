@@ -54,14 +54,14 @@ for i = 1:Ns
         if opt == 1
             lambda_gt = mean(lambdas, 2);
         elseif opt == 2
-            lambda_gt = feval(sys,'prop',z0,c);
+            lambda_gt = max(feval(sys,'prop',z0,c),1);
         end
         
         % simulate the count of each reaction r1,r2,r3
         r1 = poissrnd(lambda_gt(1)*t2);
         r2 = poissrnd(lambda_gt(2)*t2);
         r3 = dy2(ind);
-        if r3 >= 0 && prod(lambda_gt)>0
+        if r3 >= 0 
             accept = 1;
         end
     end
