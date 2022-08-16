@@ -46,5 +46,5 @@ end
 %elseif length(dy) == 1
 %    w_naive = (x(end-n2+1)-x0(end) == dy);
 %end
-naive = w_naive/sum(w_naive);
+w_naive = w_naive/sum(w_naive);
 end
