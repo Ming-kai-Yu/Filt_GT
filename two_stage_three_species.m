@@ -35,13 +35,47 @@ for k = 1:Ns
     end
     V(:,k) = x;
 end
-
 V_stage1 = V;
+%% E[a(X(t1)] from ODE
+base = x0(1)+x0(2)+2*x0(3)+1;
+num_node = base^3;
 
-%tspan = [0 t1];
-%[t,zt] = ode23(@(t,zt) three_species_ode(t,zt,c), tspan, x0);
-%lambda1 = feval(sys, 'prop', zt(end,:)', c);
+% Setting up matrix A in Kolmogorov's eqn dp/dt = A*p
+%global A_global
+A = sparse(num_node, num_node);
+%ind_state = zeros(num_node, 3);
 
+for i=1:num_node
+    x = ind2state(i,base);
+    A(i,i) = -sum(prop(x, c));
+    %ind_state(i,:)=x';
+    for reac=1:4
+       x_in = x - nu(:,reac);
+         if prod (x_in>=0 & x_in < base)
+             j = state2ind(x_in, base);
+             %if j< 1 || j > num_node
+             %   fprintf('j=%d\n',j)
+             %end
+             %if j >=1 && j <= num_node  
+                prop_in = prop(x_in, c);
+                A(i,j)=prop_in(reac);
+             %end
+         end
+    end
+end
+
+tspan = [0, T];
+index0 = state2ind(x0, base);
+p0 = zeros(num_node, 1);
+p0(index0) = 1;
+
+[t, p] = ode23(@(t, p) kolmogorov(t, p, A), [0,t1], p0);
+p_t0 = p(end,:)';
+mean_prop = 0;
+for i = 1:num_node
+    x = ind2state(i, base);
+    mean_prop = mean_prop + prop(x,c)*p_t0(i);
+end
 %% Second stage: GT
 y_T = x0(3) + dy;
 dy2 =  y_T*ones(1,Ns) - V_stage1(3,:);
@@ -57,8 +91,8 @@ for i = 1:Ns
         
         % choices of propensities
         if opt == 1
-            lambda_gt = mean(lambdas, 2);
-            %lambda_gt = lambda1;
+            %lambda_gt = mean(lambdas, 2);
+            lambda_gt = mean_prop;
         elseif opt == 2
             lambda_gt = max(feval(sys,'prop',z0,c),feval(sys,'prop',[1;1;1],c));
         end
@@ -101,3 +135,29 @@ dxdt = [-c(1)*x(1) + c(2)*x(2) - c(3)*x(1)*x(2) + c(4)*x(3);...
     c(1)*x(1) - c(2)*x(2) - c(3)*x(1)*x(2) + c(4)*x(3);...
     c(3)*x(1)*x(2) - c(4)*x(3)];
 end
+
+%% local functions dealing with conversions
+function index = state2ind(x, base)
+   % n - conservative quantity, n=x1+x2+2*x3
+   % base = n+1 as xi takes value {0, 1, ..., n}
+   % state (0,0,0) maps to index 1, (0,0,1) to 2,
+   % (0, 0, n) maps to base
+   % (0, 1, 0) maps to base + 1, etc.
+   index = x(1)*base^2 + x(2)*base + x(3) + 1;
+end
+
+function x = ind2state(index, base)
+  % inverse conversion of state2ind
+  x = zeros(3,1);
+  num = index-1;
+  x(1)= floor(num/base^2);
+  num = num-x(1)*base^2;
+  x(2) = floor(num/base);
+  num = num-x(2)*base;
+  x(3) = num;
+end
+
+function a = prop(x,c)
+  a = [c(1)*x(1); c(2)*x(2); c(3)*x(1)*x(2); c(4)*x(3)];
+end
+
