@@ -1,6 +1,8 @@
-function [V, wl] = two_stage_three_species(t1, T, dy, sys, c, Ns, opt)
+function [V,  w_poiss, l, w, V0] = two_stage_three_species(t1, T, dy, sys, c, Ns, opt, mean_prop)
 % run the inhomogeneous poisson mathod to sample the state at time T
-% V = X(t0)
+% V = X(T)
+% V0 = V(t0)
+
 nu = feval(sys,'nu'); 
 [n, m] = size(nu);
 %n_obs = n-n_unobs;
@@ -36,52 +38,14 @@ for k = 1:Ns
     V(:,k) = x;
 end
 V_stage1 = V;
-%% E[a(X(t1)] from ODE
-base = x0(1)+x0(2)+2*x0(3)+1;
-num_node = base^3;
 
-% Setting up matrix A in Kolmogorov's eqn dp/dt = A*p
-%global A_global
-A = sparse(num_node, num_node);
-%ind_state = zeros(num_node, 3);
-
-for i=1:num_node
-    x = ind2state(i,base);
-    A(i,i) = -sum(prop(x, c));
-    %ind_state(i,:)=x';
-    for reac=1:4
-       x_in = x - nu(:,reac);
-         if prod (x_in>=0 & x_in < base)
-             j = state2ind(x_in, base);
-             %if j< 1 || j > num_node
-             %   fprintf('j=%d\n',j)
-             %end
-             %if j >=1 && j <= num_node  
-                prop_in = prop(x_in, c);
-                A(i,j)=prop_in(reac);
-             %end
-         end
-    end
-end
-
-tspan = [0, T];
-index0 = state2ind(x0, base);
-p0 = zeros(num_node, 1);
-p0(index0) = 1;
-
-[t, p] = ode23(@(t, p) kolmogorov(t, p, A), [0,t1], p0);
-p_t0 = p(end,:)';
-mean_prop = 0;
-for i = 1:num_node
-    x = ind2state(i, base);
-    mean_prop = mean_prop + prop(x,c)*p_t0(i);
-end
 %% Second stage: GT
 y_T = x0(3) + dy;
 dy2 =  y_T*ones(1,Ns) - V_stage1(3,:);
 
-w = zeros(1,Ns);
-wl = zeros(1,Ns);
+w_poiss = ones(1,Ns);
+l = ones(1,Ns);
+w = ones(1, Ns);
 
 for i = 1:Ns
     accept = 0;
@@ -94,7 +58,12 @@ for i = 1:Ns
             %lambda_gt = mean(lambdas, 2);
             lambda_gt = mean_prop;
         elseif opt == 2
-            lambda_gt = max(feval(sys,'prop',z0,c),feval(sys,'prop',[1;1;1],c));
+            %lambda_gt = max(feval(sys,'prop',z0,c),feval(sys,'prop',[1;1;1],c));
+            lambda = feval(sys,'prop',z0,c);
+            lambda_lb = feval(sys,'prop',[1;1;1],c);
+            lambda_gt = max(lambda, lambda_lb);
+            lambda4 = lambda_gt(3)-dy2(ind)/t2;
+            lambda_gt(4) = max(lambda4, lambda_lb(4));
         end
         
         % simulate the count of each reaction r1,r2,r3
@@ -104,22 +73,23 @@ for i = 1:Ns
         r4 = r3-dy2(ind);
         if r4 >= 0 
             accept = 1;
+            V0(:,i)= z0;
         end
     end
     
-    w(i) = poisspdf(r4, lambda_gt(4)*t2);
+    w_poiss(i) = poisspdf(r4, lambda_gt(4)*t2);
     
     num_react = r1+r2+r3+r4;
+    k_dat = [r1; r2; r3; r4];
     type = [ones(r1,1); 2*ones(r2,1); ...
         3*ones(r3,1); 4*ones(r4,1)];
     type_dat = type(randperm(num_react));
     t_dat = sort(rand(num_react,1)*t2);
-    [V(:,i),wl(i)] = evolve_state_l(z0, sys, t_dat, type_dat, ...
-        lambda_gt, t2, c, w(i));
+    [V(:,i),l(i)] = evolve_state_l(z0, sys, t_dat, type_dat, ...
+        lambda_gt, t2, c, l(i));
 end
 
-%wl = w.*l;
-wl = wl/sum(wl);
+w = w_poiss.*l;
 end
 
 function dxdt = three_species_ode(t,x,c)
