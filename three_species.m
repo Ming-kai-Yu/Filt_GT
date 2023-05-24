@@ -17,13 +17,15 @@ if strcmp(info_type,'nu')
  output = nu;
  
 elseif strcmp(info_type,'x0')
-   output = [5; 5; 10];
+   output = [20; 20; 20];
 elseif strcmp(info_type,'T')  
    output = 20;
 elseif strcmp(info_type,'prop')
    x = varargin{1};
    c = varargin{2};
    output = prop(x,c);
+elseif strcmp(info_type,'name')
+   output = 'three_species';
 else output=[];   
 end
 end

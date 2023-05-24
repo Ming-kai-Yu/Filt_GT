@@ -8,7 +8,7 @@ dt_dat = diff(ts);
 
 sys = @death;
 %c=0.01;
-c = 4;
+c = 2;
 
 nu = feval(sys,'nu'); 
 [n, m] = size(nu);
@@ -21,8 +21,8 @@ Fx = binocdf(x_list, x0, exp(-c*T));
 
 
 %=====chosse quantile==========
-quantile = 0.01;
-quantile = 0.5;
+%quantile = 0.01;
+%quantile = 0.5;
 quantile = 0.99;
 
 
@@ -40,15 +40,15 @@ fprintf('quantile = %2.2f, xT = %d.\n', quantile, yT)
 %lambdas = c*x0 - c*(x0 -xT)/T *ts;
 
 % piecewise const propensity for GT method -- based on exponential change
-rate = log(x0/xT)/T;
-lambda1 = c*x0*exp(-rate*ts);
+%rate = log(x0/xT)/T;
+%lambda1 = c*x0*exp(-rate*ts);
 %lambdas1 = x0*exp(-rate*ts);
 
+% lambda1(t) = E[a(Z(t)]
+lambda1 = c*x0*exp(-c*ts);
 
-figure
-plot(ts, lambda1, '-r')
-ylim([0, c*x0])
-saveas(gcf, 'lin-exp.png')
+
+
 
 %% Chose lambda using optimization: lambda2
 ns = length(dt_dat);
@@ -79,6 +79,14 @@ lambda_mat = lambda_vec;
 lambda2 = lambda_mat;
 
 %%
+figure
+plot(ts(1:end-1), lambda1(1:end-1), '-r')
+hold on
+plot(ts(1:end-1), lambda2, '-b')
+ylim([0, c*x0])
+%saveas(gcf, 'lambda.png')
+
+%%
 Ns = 1000;
 num_trial = 100;
 
@@ -97,12 +105,15 @@ w_ch = zeros(num_trial, Ns);
 x_cpa = zeros(num_trial, Ns);
 w_cpa = zeros(num_trial, Ns);
 
-
+w_poiss = zeros(num_trial,Ns);
+l_dat = zeros(num_trial, Ns);
+w_dat = zeros(num_trial, Ns);
 
 %%
+%{
 tic;
 for trial = 1:num_trial
-    [x_naive(trial,:), w_naive(trial,:)] = naive(t, T, dy, sys, c, Ns);
+    %[x_naive(trial,:), w_naive(trial,:)] = naive(t, T, dy, sys, c, Ns);
 end
 toc;
 
@@ -118,16 +129,30 @@ for trial = 1:num_trial
     [x_gt2(trial,:), w_gt2(trial,:)] = GT_resampl(t, T, lambda2, dt_dat, sys, dy, c, Ns);
 end
 toc;
+%}
 
-tic;
 for trial = 1:num_trial
-    [x_ch(trial,:), w_ch(trial,:)] = sim_conditional_prop(t, T, sys, dy, c, Ns);
+    [x_gt1(trial,:), w_poiss(trial,:), l_dat(trial,:), w_dat(trial,:)] = targeting(t, T, lambda1, dt_dat, sys, dy, c, Ns);
 end
 toc;
 
 tic;
 for trial = 1:num_trial
-    [x_cpa(trial,:), w_cpa(trial,:)] = sim_conditional_prop_exact(t, T, sys, dy, c, Ns);
+    %[x_gt2(trial,:), w_gt2(trial,:)] = targeting(t, T, lambda2, dt_dat, sys, dy, c, Ns);
+end
+toc;
+
+tic;
+for trial = 1:num_trial
+    %[x_ch(trial,:), w_ch(trial,:)] = sim_conditional_prop2(t, T, sys, dy, c, Ns);
+end
+toc;
+
+
+
+tic;
+for trial = 1:num_trial
+    %[x_cpa(trial,:), w_cpa(trial,:)] = sim_conditional_prop_exact(t, T, sys, dy, c, Ns);
 end
 toc;
 %%
@@ -172,45 +197,109 @@ if is_plot_distribution
 figure
 plot(x_range, pi_dist_theo, '*k')
 hold on
-errorbar(x_range, mean(x_prob_gt), 2*std(x_prob_gt)/sqrt(num_trial), '-b')
-errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial),  '--r')
+errorbar(x_range, mean(x_prob_naive), 2*std(x_prob_naive)/sqrt(num_trial),  '-b')
+errorbar(x_range, mean(x_prob_gt1), 2*std(x_prob_gt1)/sqrt(num_trial), '-r')
+errorbar(x_range, mean(x_prob_gt2), 2*std(x_prob_gt2)/sqrt(num_trial), '-y')
 errorbar(x_range, mean(x_prob_ch), 2*std(x_prob_ch)/sqrt(num_trial), '.-g')
 errorbar(x_range, mean(x_prob_cpa), 2*std(x_prob_cpa)/sqrt(num_trial), '.-m')
 hold off
-lgd = legend('Exact', 'GT', 'naive', 'a(x|y)', 'a(x,t|y)');
+lgd = legend('Exact', 'lambda1', 'lambda2', 'naive', 'CP approx', 'CP exact');
 lgd.Location = 'northwest';
-xlabel('xt')
-ylabel('pi(xt|x0,xT)')
-xlim([10, 50])
-title('t=0.2, x0=50, xT=32, quantile=0.01')
-%saveas(gcf, 'gt_naive_cprop_qt_p01.png')
+xlabel('#S(t)')
+ylabel('conditional distribution')
+xlim([620, 720])
+%title('t=0.2, x0=50, xT=32, quantile=0.01')
+saveas(gcf, 'gt_naive_cp_common.png')
 
-
+%%
 figure
 hold on
-errorbar(x_range, mean(x_prob_gt)-pi_dist_theo, 2*std(x_prob_gt)/sqrt(num_trial), '-b')
-errorbar(x_range, mean(x_prob_naive)-pi_dist_theo, 2*std(x_prob_naive)/sqrt(num_trial),  '--r')
+errorbar(x_range, mean(x_prob_gt1)-pi_dist_theo, 2*std(x_prob_gt1)/sqrt(num_trial), '-b')
+errorbar(x_range, mean(x_prob_gt2)-pi_dist_theo, 2*std(x_prob_gt2)/sqrt(num_trial), '-r')
+%errorbar(x_range, mean(x_prob_naive)-pi_dist_theo, 2*std(x_prob_naive)/sqrt(num_trial),  '--r')
 errorbar(x_range, mean(x_prob_ch)-pi_dist_theo, 2*std(x_prob_ch)/sqrt(num_trial), '.-g')
+errorbar(x_range, mean(x_prob_cpa)-pi_dist_theo, 2*std(x_prob_cpa)/sqrt(num_trial), '.-m')
 hold off
-lgd = legend('GT', 'naive', 'a(x|y)');
+%lgd = legend('GT1', 'GT2', 'naive', 'CP approx', 'CP exact');
+lgd = legend('lambda1', 'lambda2', 'CP approx', 'CP exact');
 lgd.Location = 'northwest';
-xlabel('xt')
-ylabel('pi(xt|x0,xT)')
-xlim([0, 50])
-title('t=0.2, x0=50, xT=45, quantile=0.99')
-%saveas(gcf, 'gt_naive_cprop_qt_p99.png')
+xlabel('#S(t)')
+ylabel('conditional distribution')
+xlim([640, 740])
+ylim([-4*0.001, 4*0.001])
+%title('t=0.2, x0=50, xT=45, quantile=0.99')
+saveas(gcf, 'gt_naive_cp_rare_diff.png')
+
+%%
+xconf= [x_range, x_range(end:-1:1)];
+yconf_naive_up = mean(x_prob_naive)-pi_dist_theo + 2*std(x_prob_naive)/sqrt(num_trial);
+yconf_naive_low = mean(x_prob_naive)-pi_dist_theo - 2*std(x_prob_naive)/sqrt(num_trial);
+yconf_naive = [yconf_naive_up, yconf_naive_low(end:-1:1)];
+
+yconf_gt1_up = mean(x_prob_gt1)-pi_dist_theo + 2*std(x_prob_gt1)/sqrt(num_trial);
+yconf_gt1_low = mean(x_prob_gt1)-pi_dist_theo - 2*std(x_prob_gt1)/sqrt(num_trial);
+yconf_gt1 = [yconf_gt1_up, yconf_gt1_low(end:-1:1)];
+
+yconf_gt2_up = mean(x_prob_gt2)-pi_dist_theo + 2*std(x_prob_gt2)/sqrt(num_trial);
+yconf_gt2_low = mean(x_prob_gt2)-pi_dist_theo - 2*std(x_prob_gt2)/sqrt(num_trial);
+yconf_gt2 = [yconf_gt2_up, yconf_gt2_low(end:-1:1)];
+
+yconf_ch_up = mean(x_prob_ch)-pi_dist_theo + 2*std(x_prob_ch)/sqrt(num_trial);
+yconf_ch_low = mean(x_prob_ch)-pi_dist_theo - 2*std(x_prob_ch)/sqrt(num_trial);
+yconf_ch= [yconf_ch_up, yconf_ch_low(end:-1:1)];
+
+yconf_cpa_up = mean(x_prob_cpa)-pi_dist_theo + 2*std(x_prob_cpa)/sqrt(num_trial);
+yconf_cpa_low = mean(x_prob_cpa)-pi_dist_theo - 2*std(x_prob_cpa)/sqrt(num_trial);
+yconf_cpa = [yconf_cpa_up, yconf_cpa_low(end:-1:1)];
 
 figure
-plot(x_range, pi_dist_theo, '*k')
+p = fill(xconf,yconf_naive,'blue');
+%p.FaceColor = [1 0.8 0.8];
+p.FaceColor = [0.5 0.7 1];     
+p.EdgeColor = 'none';           
+
 hold on
-plot(x_range, x_prob_gt(1,:),'-b')
-plot(x_range, x_prob_gt(2,:),'-b')
-plot(x_range, x_prob_naive(1,:),'--r')
-plot(x_range, x_prob_naive(2,:),'--r')
-plot(x_range, x_prob_ch(1,:),'.-g')
-plot(x_range, x_prob_ch(2,:),'.-g')
-xlim([0, 50])
+p1 = fill(xconf,yconf_gt1,'red');
+p1.FaceColor = [1 0.7 0.7];
+p1.EdgeColor = 'none'; 
+
+p2 = fill(xconf,yconf_gt2, 'yellow');
+p2.FaceColor = [1 1 0.8];     
+p2.EdgeColor = 'none';
+
+p3 = fill(xconf,yconf_ch, 'green');
+p3.FaceColor = [0.7 1 0.7];     
+p3.EdgeColor = 'none';
+
+p4 = fill(xconf,yconf_cpa, 'magenta');
+p4.FaceColor = [1 0.7 1];     
+p4.EdgeColor = 'none';
+
+
+plot(x_range, mean(x_prob_naive)-pi_dist_theo,'-b')
+plot(x_range, mean(x_prob_gt1)-pi_dist_theo, '-r')
+plot(x_range, mean(x_prob_gt2)-pi_dist_theo, '-y')
+plot(x_range, mean(x_prob_ch)-pi_dist_theo, '-g')
+plot(x_range, mean(x_prob_cpa)-pi_dist_theo, '-m')
+
+legend('naive', 'lambda1', 'lambda2', 'CP approx', 'CP exact')
+xlim([620, 800])
 hold off
+
+xlabel('#S1')
+ylabel('bias of conditional distribution')
+saveas(gcf,'pi_naive_gt_fill_death_common.png')
+
+%figure
+%plot(x_range, pi_dist_theo, '*k')
+%hold on
+%plot(x_range, x_prob_gt1(1,:),'-b')
+%plot(x_range, x_prob_gt1(2,:),'-b')
+%plot(x_range, x_prob_naive(1,:),'--r')
+%plot(x_range, x_prob_naive(2,:),'--r')
+%plot(x_range, x_prob_ch(1,:),'.-g')
+%plot(x_range, x_prob_ch(2,:),'.-g')
+%hold off
 
 
 end
@@ -231,6 +320,11 @@ ess_gt1 = zeros(num_trial, 1);
 ess_gt2 = zeros(num_trial, 1); 
 ess_ch = zeros(num_trial, 1);
 ess_cpa = zeros(num_trial, 1);
+
+ess_poiss = zeros(num_trial, 1);
+ess_girsanov = zeros(num_trial, 1);
+ess_overall = zeros(num_trial, 1);
+
 for i = 1:num_trial
     tve_naive(i) = sum(abs(x_prob_naive(i,:)-pi_dist_theo));
     tve_gt1(i) = sum(abs(x_prob_gt1(i,:)-pi_dist_theo));
@@ -247,6 +341,10 @@ for i = 1:num_trial
     ess_gt2(i) = norm(w_gt2(i,:), 1)^2/norm(w_gt2(i,:), 2)^2;
     ess_ch(i) = norm(w_ch(i,:), 1)^2/norm(w_ch(i,:), 2)^2;
     ess_cpa(i) = norm(w_cpa(i,:),1)^2/norm(w_cpa(i,:),2)^2;
+    
+    ess_poiss(i) = norm(w_poiss(i,:), 1)^2/norm(w_poiss(i,:), 2)^2;
+    ess_girsanov(i) = norm(l_dat(i,:), 1)^2/norm(l_dat(i,:), 2)^2;
+    ess_overall(i) = norm(w_dat(i,:), 1)^2/norm(w_dat(i,:), 2)^2;
 end
 
 %{
@@ -320,15 +418,15 @@ fprintf('Cond prop: %2.4f, [%2.4f, %2.4f] \n', ...
     mean(hellinger_cpa), mean(hellinger_cpa)-2*std(hellinger_cpa)/sqrt(num_trial), ...
     mean(hellinger_cpa)+2*std(hellinger_cpa)/sqrt(num_trial));
 
-fprintf('---------ESS----------------\n')
-fprintf('naive: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_naive), mean(ess_naive)-2*std(ess_naive)/sqrt(num_trial), ...
+fprintf('---------ESS Fraction----------------\n')
+fprintf('naive: %5.3f, [%5.2f, %5.2f] \n', ...
+    mean(ess_naive)/Ns, mean(ess_naive)-2*std(ess_naive)/sqrt(num_trial), ...
     mean(ess_naive)+2*std(ess_naive)/sqrt(num_trial));
-fprintf('GT1: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_gt1), mean(ess_gt1)-2*std(ess_gt1)/sqrt(num_trial), ...
+fprintf('GT1: %5.3f, [%5.2f, %5.2f] \n', ...
+    mean(ess_gt1/Ns), mean(ess_gt1)-2*std(ess_gt1)/sqrt(num_trial), ...
     mean(ess_gt1)+2*std(ess_gt1)/sqrt(num_trial));
-fprintf('GT2: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_gt2), mean(ess_gt2)-2*std(ess_gt2)/sqrt(num_trial), ...
+fprintf('GT2: %5.3f, [%5.2f, %5.2f] \n', ...
+    mean(ess_gt2/Ns), mean(ess_gt2)-2*std(ess_gt2)/sqrt(num_trial), ...
     mean(ess_gt2)+2*std(ess_gt2)/sqrt(num_trial));
 fprintf('Cond prop: %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess_ch), mean(ess_ch)-2*std(ess_ch)/sqrt(num_trial), ...
@@ -336,6 +434,19 @@ fprintf('Cond prop: %5.2f, [%5.2f, %5.2f] \n', ...
 fprintf('Cond prop (time-dependent): %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess_cpa), mean(ess_cpa)-2*std(ess_cpa)/sqrt(num_trial), ...
     mean(ess_cpa)+2*std(ess_cpa)/sqrt(num_trial));
+
+fprintf('Poisson weight: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_poiss)/Ns, mean(ess_poiss)-2*std(ess_poiss)/sqrt(num_trial), ...
+    mean(ess_poiss)+2*std(ess_poiss)/sqrt(num_trial));
+
+
+fprintf('Girsanov weight: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_girsanov)/Ns, mean(ess_girsanov)-2*std(ess_girsanov)/sqrt(num_trial), ...
+    mean(ess_girsanov)+2*std(ess_girsanov)/sqrt(num_trial));
+
+fprintf('Overall weight: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_overall)/Ns, mean(ess_overall)-2*std(ess_overall)/sqrt(num_trial), ...
+    mean(ess_overall)+2*std(ess_overall)/sqrt(num_trial));
 
     
 
