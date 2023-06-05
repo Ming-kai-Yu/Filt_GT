@@ -17,6 +17,8 @@ elseif strcmp(info_type,'prop')
    x = varargin{1};
    c = varargin{2};
    output = prop(x,c);
+elseif strcmp(info_type, 'name')
+    output = "death";
 else output=[];   
 end
 end

@@ -105,9 +105,13 @@ w_ch = zeros(num_trial, Ns);
 x_cpa = zeros(num_trial, Ns);
 w_cpa = zeros(num_trial, Ns);
 
-w_poiss = zeros(num_trial,Ns);
-l_dat = zeros(num_trial, Ns);
-w_dat = zeros(num_trial, Ns);
+w_poiss1 = zeros(num_trial,Ns);
+l_dat1 = zeros(num_trial, Ns);
+w_dat1 = zeros(num_trial, Ns);
+
+w_poiss2 = zeros(num_trial,Ns);
+l_dat2 = zeros(num_trial, Ns);
+w_dat2 = zeros(num_trial, Ns);
 
 %%
 %{
@@ -132,13 +136,13 @@ toc;
 %}
 
 for trial = 1:num_trial
-    [x_gt1(trial,:), w_poiss(trial,:), l_dat(trial,:), w_dat(trial,:)] = targeting(t, T, lambda1, dt_dat, sys, dy, c, Ns);
+    [x_gt1(trial,:), w_poiss1(trial,:), l_dat1(trial,:), w_dat1(trial,:)] = targeting(t, T, lambda1, dt_dat, sys, dy, c, Ns);
 end
 toc;
 
 tic;
 for trial = 1:num_trial
-    %[x_gt2(trial,:), w_gt2(trial,:)] = targeting(t, T, lambda2, dt_dat, sys, dy, c, Ns);
+    [x_gt2(trial,:), w_poiss2(trial,:), l_dat2(trial,:), w_dat2(trial,:) ] = targeting(t, T, lambda2, dt_dat, sys, dy, c, Ns);
 end
 toc;
 
@@ -168,8 +172,8 @@ x_prob_cpa = zeros(num_trial, xmax-xmin+1);
 
 for i = 1:num_trial
     x_prob_naive(i,:) = get_hist(x_naive(i,:), w_naive(i,:), x_range);
-    x_prob_gt1(i,:) = get_hist(x_gt1(i,:), w_gt1(i,:), x_range);
-    x_prob_gt2(i,:) = get_hist(x_gt2(i,:), w_gt2(i,:), x_range);
+    x_prob_gt1(i,:) = get_hist(x_gt1(i,:), w_dat1(i,:), x_range);
+    x_prob_gt2(i,:) = get_hist(x_gt2(i,:), w_dat2(i,:), x_range);
     x_prob_ch(i,:) = get_hist(x_ch(i,:), w_ch(i,:), x_range);
     x_prob_cpa(i,:) = get_hist(x_cpa(i,:), w_cpa(i,:), x_range);
 end
@@ -321,9 +325,14 @@ ess_gt2 = zeros(num_trial, 1);
 ess_ch = zeros(num_trial, 1);
 ess_cpa = zeros(num_trial, 1);
 
-ess_poiss = zeros(num_trial, 1);
-ess_girsanov = zeros(num_trial, 1);
-ess_overall = zeros(num_trial, 1);
+ess_poiss1 = zeros(num_trial, 1);
+ess_girsanov1 = zeros(num_trial, 1);
+ess_overall1 = zeros(num_trial, 1);
+
+ess_poiss2 = zeros(num_trial, 1);
+ess_girsanov2 = zeros(num_trial, 1);
+ess_overall2 = zeros(num_trial, 1);
+
 
 for i = 1:num_trial
     tve_naive(i) = sum(abs(x_prob_naive(i,:)-pi_dist_theo));
@@ -342,9 +351,13 @@ for i = 1:num_trial
     ess_ch(i) = norm(w_ch(i,:), 1)^2/norm(w_ch(i,:), 2)^2;
     ess_cpa(i) = norm(w_cpa(i,:),1)^2/norm(w_cpa(i,:),2)^2;
     
-    ess_poiss(i) = norm(w_poiss(i,:), 1)^2/norm(w_poiss(i,:), 2)^2;
-    ess_girsanov(i) = norm(l_dat(i,:), 1)^2/norm(l_dat(i,:), 2)^2;
-    ess_overall(i) = norm(w_dat(i,:), 1)^2/norm(w_dat(i,:), 2)^2;
+    ess_poiss1(i) = norm(w_poiss1(i,:), 1)^2/norm(w_poiss1(i,:), 2)^2;
+    ess_girsanov1(i) = norm(l_dat1(i,:), 1)^2/norm(l_dat1(i,:), 2)^2;
+    ess_overall1(i) = norm(w_dat1(i,:), 1)^2/norm(w_dat1(i,:), 2)^2;
+    ess_poiss2(i) = norm(w_poiss2(i,:), 1)^2/norm(w_poiss2(i,:), 2)^2;
+    ess_girsanov2(i) = norm(l_dat2(i,:), 1)^2/norm(l_dat2(i,:), 2)^2;
+    ess_overall2(i) = norm(w_dat2(i,:), 1)^2/norm(w_dat2(i,:), 2)^2;
+
 end
 
 %{
@@ -434,19 +447,30 @@ fprintf('Cond prop: %5.2f, [%5.2f, %5.2f] \n', ...
 fprintf('Cond prop (time-dependent): %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess_cpa), mean(ess_cpa)-2*std(ess_cpa)/sqrt(num_trial), ...
     mean(ess_cpa)+2*std(ess_cpa)/sqrt(num_trial));
+fprintf('---------------\n')
+fprintf('Poisson weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_poiss1)/Ns, mean(ess_poiss1)-2*std(ess_poiss1)/sqrt(num_trial), ...
+    mean(ess_poiss1)+2*std(ess_poiss1)/sqrt(num_trial));
 
-fprintf('Poisson weight: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_poiss)/Ns, mean(ess_poiss)-2*std(ess_poiss)/sqrt(num_trial), ...
-    mean(ess_poiss)+2*std(ess_poiss)/sqrt(num_trial));
+fprintf('Girsanov weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_girsanov1)/Ns, mean(ess_girsanov1)-2*std(ess_girsanov1)/sqrt(num_trial), ...
+    mean(ess_girsanov1)+2*std(ess_girsanov1)/sqrt(num_trial));
 
+fprintf('Overall weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_overall1)/Ns, mean(ess_overall1)-2*std(ess_overall1)/sqrt(num_trial), ...
+    mean(ess_overall1)+2*std(ess_overall1)/sqrt(num_trial));
 
-fprintf('Girsanov weight: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_girsanov)/Ns, mean(ess_girsanov)-2*std(ess_girsanov)/sqrt(num_trial), ...
-    mean(ess_girsanov)+2*std(ess_girsanov)/sqrt(num_trial));
+fprintf('Poisson weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_poiss2)/Ns, mean(ess_poiss2)-2*std(ess_poiss2)/sqrt(num_trial), ...
+    mean(ess_poiss2)+2*std(ess_poiss2)/sqrt(num_trial));
 
-fprintf('Overall weight: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_overall)/Ns, mean(ess_overall)-2*std(ess_overall)/sqrt(num_trial), ...
-    mean(ess_overall)+2*std(ess_overall)/sqrt(num_trial));
+fprintf('Girsanov weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_girsanov2)/Ns, mean(ess_girsanov2)-2*std(ess_girsanov2)/sqrt(num_trial), ...
+    mean(ess_girsanov2)+2*std(ess_girsanov2)/sqrt(num_trial));
+
+fprintf('Overall weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_overall2)/Ns, mean(ess_overall2)-2*std(ess_overall2)/sqrt(num_trial), ...
+    mean(ess_overall2)+2*std(ess_overall2)/sqrt(num_trial));
 
     
 

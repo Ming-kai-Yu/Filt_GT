@@ -14,13 +14,15 @@ if strcmp(info_type,'nu')
  output = nu;
  
 elseif strcmp(info_type,'x0')
-   output = [10; 0];
+   output = [100; 100];
 elseif strcmp(info_type,'T')  
    output = 3;
 elseif strcmp(info_type,'prop')
    x = varargin{1};
    c = varargin{2};
    output = prop(x,c);
+elseif strcmp(info_type, 'name')
+   output = "rev_two_species";
 else output=[];   
 end
 end

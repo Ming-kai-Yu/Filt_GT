@@ -184,7 +184,7 @@ for trial = 1:num_trial
 end
 toc;
 
-fprintf('piecewise constant lambda1')
+fprintf('piecewise constant lambda1.')
 tic;
 for trial = 1:num_trial
     [V, w_poiss1(trial,:), l_dat1(trial,:), w_gt1(trial,:)] = targeting(T, T, prop_mat, dt, sys, dy, c, Ns);
@@ -192,7 +192,7 @@ for trial = 1:num_trial
 end
 toc;
 
-fprintf('piecewise constant lambda2')
+fprintf('piecewise constant lambda2.')
 tic;
 for trial = 1:num_trial
     [V, w_poiss2(trial,:), l_dat2(trial,:), w_gt2(trial,:)] = targeting(T, T, lambda_mat, dt, sys, dy, c, Ns);
@@ -220,7 +220,7 @@ for i = 1:num_trial
 end
 
 %% Kolmogorov eqn
-is_run_ode = 0;
+is_run_ode = 1;
 
 if is_run_ode == 1
     
@@ -609,7 +609,7 @@ fprintf('Poisson weight 2: %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess2_poiss2)+2*std(ess2_poiss2)/sqrt(num_trial));
 
 
-fprintf('Girsanov weight 2: %5.3f, [%5.2f, %5.2f] \n', ...
+fprintf('Girsanov weight 2: %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess2_girsanov2)/Ns, mean(ess2_girsanov2)-2*std(ess2_girsanov2)/sqrt(num_trial), ...
     mean(ess2_girsanov2)+2*std(ess2_girsanov2)/sqrt(num_trial));
 

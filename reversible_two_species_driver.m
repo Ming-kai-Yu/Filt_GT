@@ -14,9 +14,9 @@ nu = feval(sys,'nu');
 [n, m] = size(nu);
 n_obs = n-n_unobs;
 x0 = feval(sys, 'x0');
-z0 = x0
+z0 = x0;
 total = sum(x0);
-dy = 18
+dy = 18;
 
 %% ODE model for E[Z(t)]
 % dx/dt= A*x
@@ -58,7 +58,7 @@ end
 
 %% Poissonian bridge
 
-% Divide the interval [0, T] into l evenly spaced subinterval
+% Divide the interval [0, T] into evenly spaced subinterval
 %l = 5; 
 ns = length(dt);
 
@@ -100,7 +100,7 @@ Aeq = [dt, -dt];
 beq = dy;
 lb = zeros(1, m*ns);
 ub = Inf*ones(1, m*ns);
-x = fmincon(objfunc,x0_lambda,A,b,Aeq,beq, lb, ub)
+x = fmincon(objfunc,x0_lambda,A,b,Aeq,beq, lb, ub);
 %------------------------
 
 lambda_vec = x;
@@ -111,16 +111,12 @@ for i = 1:m
     lambda_mat(i,:) = lambda_vec(ind_start:ind_end);
 end
 
-
-
-
-
 %% Simulation
 Ns = 1000;
-num_trial = 100;
+num_trial = 10;
 
-lambda = lambda_mat;
-%lambda = prop_mat;
+lambda2 = lambda_mat;
+lambda1 = prop_mat;
 
 x_naive = zeros(num_trial, Ns);
 w_naive = zeros(num_trial, Ns);
@@ -130,6 +126,15 @@ x_cp = zeros(num_trial, Ns); %approx, const propensity between jumps
 w_cp = zeros(num_trial, Ns);
 
 V = zeros(n, Ns);
+
+w_poiss1 = zeros(num_trial,Ns);
+l_dat1 = zeros(num_trial, Ns);
+w_gt1 = zeros(num_trial, Ns);
+
+w_poiss2 = zeros(num_trial,Ns);
+l_dat2 = zeros(num_trial, Ns);
+w_gt2 = zeros(num_trial, Ns);
+
 tic;
 for trial = 1:num_trial
     [V, w_naive(trial,:)] = naive(t, T, dy, sys, c, Ns);
@@ -138,12 +143,29 @@ end
 toc;
 
 %%
+%{
 tic;
 for trial = 1:num_trial
     [V, w_gt(trial,:)] = GT_resampl(t, T, lambda, dt, sys, dy, c, Ns);
     x_gt(trial,:) = V(1,:);
 end
 toc;
+%}
+
+tic;
+for trial = 1:num_trial
+    [V, w_poiss1(trial,:), l_dat1(trial,:), w_gt1(trial,:)] = targeting(t, T, lambda1, dt, sys, dy, c, Ns);
+    x_gt(trial,:) = V(1,:);
+end
+toc;
+
+tic;
+for trial = 1:num_trial
+    [V, w_poiss2(trial,:), l_dat2(trial,:), w_gt2(trial,:)] = targeting(t, T, lambda2, dt, sys, dy, c, Ns);
+    x_gt(trial,:) = V(1,:);
+end
+toc;
+
 
 %%
 tic;
@@ -158,12 +180,14 @@ xmin = 0;
 xmax = sum(x0);
 x_range = xmin:xmax;
 x_prob_naive = zeros(num_trial, xmax-xmin+1);
-x_prob_gt = zeros(num_trial, xmax-xmin+1);
+x_prob_gt1 = zeros(num_trial, xmax-xmin+1);
+x_prob_gt2 = zeros(num_trial, xmax-xmin+1);
 x_prob_cp = zeros(num_trial, xmax-xmin+1);
 
 for i = 1:num_trial
     x_prob_naive(i,:) = get_hist(x_naive(i,:), w_naive(i,:), x_range);
-    x_prob_gt(i,:) = get_hist(x_gt(i,:), w_gt(i,:), x_range);
+    x_prob_gt1(i,:) = get_hist(x_gt1(i,:), w_gt1(i,:), x_range);
+    x_prob_gt2(i,:) = get_hist(x_gt2(i,:), w_gt2(i,:), x_range);
     x_prob_cp(i,:) = get_hist(x_cp(i,:), w_cp(i,:), x_range);
 end
 
@@ -207,16 +231,33 @@ hellinger_cp = zeros(num_trial,1);
 ess_naive = zeros(num_trial, 1); 
 ess_gt = zeros(num_trial, 1); 
 ess_cp = zeros(num_trial, 1);
+
+ess_poiss1 = zeros(num_trial, 1);
+ess_girsanov1 = zeros(num_trial, 1);
+ess_overall1 = zeros(num_trial, 1);
+
+ess_poiss2 = zeros(num_trial, 1);
+ess_girsanov2 = zeros(num_trial, 1);
+ess_overall2 = zeros(num_trial, 1);
+
 for i = 1:num_trial
     tve_naive(i) = sum(abs(x_prob_naive(i,:)-pi_dist_theo));
-    tve_gt(i) = sum(abs(x_prob_gt(i,:)-pi_dist_theo));
+    tve_gt1(i) = sum(abs(x_prob_gt1(i,:)-pi_dist_theo));
+    tve_gt2(i) = sum(abs(x_prob_gt2(i,:)-pi_dist_theo));
     tve_cp(i) = sum(abs(x_prob_cp(i,:)-pi_dist_theo));
-    hellinger_naive(i)= 1/sqrt(2)*norm(sqrt(x_prob_naive(i,:))-sqrt(pi_dist_theo));
-    hellinger_gt(i)= 1/sqrt(2)*norm(sqrt(x_prob_gt(i,:))-sqrt(pi_dist_theo));
-    hellinger_cp(i)= 1/sqrt(2)*norm(sqrt(x_prob_cp(i,:))-sqrt(pi_dist_theo));
+    %hellinger_naive(i)= 1/sqrt(2)*norm(sqrt(x_prob_naive(i,:))-sqrt(pi_dist_theo));
+    %hellinger_gt(i)= 1/sqrt(2)*norm(sqrt(x_prob_gt(i,:))-sqrt(pi_dist_theo));
+    %hellinger_cp(i)= 1/sqrt(2)*norm(sqrt(x_prob_cp(i,:))-sqrt(pi_dist_theo));
     ess_naive(i) = norm(w_naive(i,:), 1)^2/norm(w_naive(i,:), 2)^2;
-    ess_gt(i) = norm(w_gt(i,:), 1)^2/norm(w_gt(i,:), 2)^2;
+    %ess_gt(i) = norm(w_gt(i,:), 1)^2/norm(w_gt(i,:), 2)^2;
     ess_cp(i) = norm(w_cp(i,:), 1)^2/norm(w_cp(i,:), 2)^2;
+
+    ess_poiss1(i) = norm(w_poiss1(i,:), 1)^2/norm(w_poiss1(i,:), 2)^2;
+    ess_girsanov1(i) = norm(l_dat1(i,:), 1)^2/norm(l_dat1(i,:), 2)^2;
+    ess_overall1(i) = norm(w_dat1(i,:), 1)^2/norm(w_dat1(i,:), 2)^2;
+    ess_poiss2(i) = norm(w_poiss2(i,:), 1)^2/norm(w_poiss2(i,:), 2)^2;
+    ess_girsanov2(i) = norm(l_dat2(i,:), 1)^2/norm(l_dat2(i,:), 2)^2;
+    ess_overall2(i) = norm(w_dat2(i,:), 1)^2/norm(w_dat2(i,:), 2)^2;
 end
 
 
@@ -224,14 +265,17 @@ fprintf('---------TVE----------------\n')
 fprintf('naive: %2.4f, [%2.4f, %2.4f] \n', ...
     mean(tve_naive), mean(tve_naive)-2*std(tve_naive)/sqrt(num_trial), ...
     mean(tve_naive)+2*std(tve_naive)/sqrt(num_trial));
-fprintf('GT: %2.4f, [%2.4f, %2.4f] \n', ...
-    mean(tve_gt), mean(tve_gt)-2*std(tve_gt)/sqrt(num_trial), ...
-    mean(tve_gt)+2*std(tve_gt)/sqrt(num_trial));
+fprintf('GT1: %2.4f, [%2.4f, %2.4f] \n', ...
+    mean(tve_gt1), mean(tve_gt1)-2*std(tve_gt1)/sqrt(num_trial), ...
+    mean(tve_gt1)+2*std(tve_gt1)/sqrt(num_trial));
+fprintf('GT2: %2.4f, [%2.4f, %2.4f] \n', ...
+    mean(tve_gt2), mean(tve_gt2)-2*std(tve_gt2)/sqrt(num_trial), ...
+    mean(tve_gt2)+2*std(tve_gt2)/sqrt(num_trial));
 fprintf('Cond prop: %2.4f, [%2.4f, %2.4f] \n', ...
     mean(tve_cp), mean(tve_cp)-2*std(tve_cp)/sqrt(num_trial), ...
     mean(tve_cp)+2*std(tve_cp)/sqrt(num_trial));
 
-
+%{
 fprintf('---------Hellinger----------------\n')
 fprintf('naive: %2.4f, [%2.4f, %2.4f] \n', ...
     mean(hellinger_naive), mean(hellinger_naive)-2*std(hellinger_naive)/sqrt(num_trial), ...
@@ -242,18 +286,42 @@ fprintf('GT: %2.4f, [%2.4f, %2.4f] \n', ...
 fprintf('Cond prop: %2.4f, [%2.4f, %2.4f] \n', ...
     mean(hellinger_cp), mean(hellinger_cp)-2*std(hellinger_cp)/sqrt(num_trial), ...
     mean(hellinger_cp)+2*std(hellinger_cp)/sqrt(num_trial));
+%}
 
 fprintf('---------ESS----------------\n')
 fprintf('naive: %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess_naive), mean(ess_naive)-2*std(ess_naive)/sqrt(num_trial), ...
     mean(ess_naive)+2*std(ess_naive)/sqrt(num_trial));
-fprintf('GT: %5.2f, [%5.2f, %5.2f] \n', ...
-    mean(ess_gt), mean(ess_gt)-2*std(ess_gt)/sqrt(num_trial), ...
-    mean(ess_gt)+2*std(ess_gt)/sqrt(num_trial));
+%fprintf('GT: %5.2f, [%5.2f, %5.2f] \n', ...
+%    mean(ess_gt), mean(ess_gt)-2*std(ess_gt)/sqrt(num_trial), ...
+%    mean(ess_gt)+2*std(ess_gt)/sqrt(num_trial));
 fprintf('Cond prop: %5.2f, [%5.2f, %5.2f] \n', ...
     mean(ess_cp), mean(ess_cp)-2*std(ess_cp)/sqrt(num_trial), ...
     mean(ess_cp)+2*std(ess_cp)/sqrt(num_trial));
+fprintf('---------------\n')
+fprintf('Poisson weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_poiss1)/Ns, mean(ess_poiss1)-2*std(ess_poiss1)/sqrt(num_trial), ...
+    mean(ess_poiss1)+2*std(ess_poiss1)/sqrt(num_trial));
 
+fprintf('Girsanov weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_girsanov1)/Ns, mean(ess_girsanov1)-2*std(ess_girsanov1)/sqrt(num_trial), ...
+    mean(ess_girsanov1)+2*std(ess_girsanov1)/sqrt(num_trial));
+
+fprintf('Overall weight1: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_overall1)/Ns, mean(ess_overall1)-2*std(ess_overall1)/sqrt(num_trial), ...
+    mean(ess_overall1)+2*std(ess_overall1)/sqrt(num_trial));
+
+fprintf('Poisson weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_poiss2)/Ns, mean(ess_poiss2)-2*std(ess_poiss2)/sqrt(num_trial), ...
+    mean(ess_poiss2)+2*std(ess_poiss2)/sqrt(num_trial));
+
+fprintf('Girsanov weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_girsanov2)/Ns, mean(ess_girsanov2)-2*std(ess_girsanov2)/sqrt(num_trial), ...
+    mean(ess_girsanov2)+2*std(ess_girsanov2)/sqrt(num_trial));
+
+fprintf('Overall weight2: %5.2f, [%5.2f, %5.2f] \n', ...
+    mean(ess_overall2)/Ns, mean(ess_overall2)-2*std(ess_overall2)/sqrt(num_trial), ...
+    mean(ess_overall2)+2*std(ess_overall2)/sqrt(num_trial));
 %%
 t_a = ts(1:end-1);
 figure
@@ -261,13 +329,13 @@ hold on
 stairs(ts, [prop_mat(1,:), prop_mat(1,end)], '-k');
 %stairs(ts, [lambda12(1,:), lambda12(1,end)], '-b');
 %stairs(ts, [lambda6(1,:), lambda6(1,end)], '-g');
-stairs(ts, [lambda18(1,:), lambda18(1,end)], '-m');
+%stairs(ts, [lambda18(1,:), lambda18(1,end)], '-m');
 
 stairs(ts, [prop_mat(2,:), prop_mat(2,end)], '-k');
 %stairs(ts, [lambda12(2,:), lambda12(2,end)], '-b');
 %stairs(ts, [lambda6(2,:), lambda6(2,end)], '-g');
-stairs(ts, [lambda18(2,:), lambda18(2,end)], '-m');
-hold off
+%stairs(ts, [lambda18(2,:), lambda18(2,end)], '-m');
+%hold off
 %legend('E[a(x)]','fmincon, dy=12','fmincon, dy = 6','fmincon, dy=18', '', '', '', '', 'AutoUpdate','off')
 %lgd = legend({'E[a(x)]','fmincon, dy=12','fmincon, dy = 6','fmincon, dy=18'});
 %lgd.NumColumns = 2;

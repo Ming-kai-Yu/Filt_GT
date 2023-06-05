@@ -62,8 +62,8 @@ for i = 1:Ns
             lambda = feval(sys,'prop',z0,c);
             lambda_lb = feval(sys,'prop',[1;1;1],c);
             lambda_gt = max(lambda, lambda_lb);
-            lambda4 = lambda_gt(3)-dy2(ind)/t2;
-            lambda_gt(4) = max(lambda4, lambda_lb(4));
+            %lambda4 = lambda_gt(3)-dy2(ind)/t2;
+            %lambda_gt(4) = max(lambda4, lambda_lb(4));
         end
         
         % simulate the count of each reaction r1,r2,r3
